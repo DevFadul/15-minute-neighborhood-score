@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "assessments": [
+    {
+      "id": 1,
+      "nickname": "Current Apartment",
+      "location_note": "Jalan Ampang, KL",
+      "created_at": "2026-08-10T21:15:03",
+      "category_times": {
+        "grocery": 4,
+        "healthcare": 12,
+        "education": 20,
+        "transit": 3,
+        "parks": 9,
+        "retail": 7
+      }
+    },
+    {
+      "id": 2,
+      "nickname": "Prospective New Condo",
+      "location_note": "Cyberjaya",
+      "created_at": "2026-08-11T09:02:41",
+      "category_times": {
+        "grocery": 2,
+        "healthcare": 6,
+        "education": 8,
+        "transit": 1,
+        "parks": 4,
+        "retail": 3
+      }
+    }
+  ]
+}

@@ -1,0 +1,852 @@
+======================================================================
+15-MINUTE NEIGHBORHOOD SCORE -- MANUAL TEST TRANSCRIPT
+======================================================================
+This file is the captured, real console output of automated test runs
+against main.py (no output below has been hand-edited). Each run below
+maps to one or more scenarios from the project test plan:
+
+RUN 1 -- First launch (no data file yet)
+  - View All on empty history -> graceful "No assessments yet." message
+  - Delete on empty history -> graceful error, no crash
+  - Compare with fewer than 2 assessments -> graceful error, no crash
+
+RUN 2 -- Corrupted data file
+  - data/assessments.json manually overwritten with invalid JSON
+  - App detects the parse failure, renames the file to assessments.json.bak,
+    warns the user, and continues with an empty history instead of crashing
+
+RUN 3 -- Full feature walkthrough (18 scenarios in one continuous session)
+  - Invalid main-menu inputs ("9", "-1", "abc", "") each rejected and re-prompted
+  - Blank nickname rejected and re-prompted
+  - Non-numeric ("abc") and negative ("-4") walking-time inputs rejected
+  - Oversized walking-time input ("9999", > 180 max) rejected
+  - Assessment #1 "Current Apartment": mixed tiers -> hand-verified 73.0/100 (Good)
+  - Assessment #2 "Perfect Score Home": all times <=5 min -> 100.0/100 (Excellent)
+  - Assessment #3 "Car Dependent Suburb": all times >25 min -> 0.0/100 (Poor)
+  - Assessment #4 "Edge Test A": tier boundary values 5/6/10/11/15/16 -> 63.0/100 (Fair)
+  - Assessment #5 "Edge Test B": tier boundary values 25/26/0/1/2/3 -> 69.0/100 (Fair)
+  - Recommendations on a mixed-score assessment -> correct 2 weakest categories + tips
+  - Recommendations on a perfect-100 assessment -> graceful "no major gaps" message
+  - Recommendations on a zero-score assessment -> correct weakest-category tips
+  - Compare two different assessments -> correct side-by-side table + verdict
+  - Compare an assessment against itself -> rejected with a clear error
+  - Edit: update one category's time -> score correctly recalculated afterward
+  - Edit: rename a nickname -> change reflected immediately
+  - Delete: cancelled at confirmation ("maybe" rejected, then "n") -> item still present
+  - Delete: confirmed ("y") -> item removed, ID gap now visible in the history list
+  - About screen -> renders live from the same constants that drive scoring
+  - Long nickname (48 characters) -> truncated cleanly in fixed-width columns
+    instead of overflowing into neighboring columns (this exposed and fixed a
+    real formatting bug during testing -- see note at the bottom of this file)
+  - Clean exit
+
+All three runs completed with exit code 0 and zero unhandled exceptions
+(verified by grepping the raw output for "Traceback"/"Exception" -- none found).
+
+======================================================================
+
+########## RUN 1: First run (no data file) -- empty-history behavior ##########
+Input sequence: 2 (view all), 7 (delete-empty), 5 (compare-empty), 0 (exit)
+
+Welcome to the 15-Minute Neighborhood Score tool.
+Assess how walkable your neighborhood is, and compare options
+to make more sustainable, informed housing decisions.
+
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+No assessments yet. Choose option 1 to create your first one.
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): [ERROR] No assessments yet. Create one first (option 1).
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): [ERROR] You need at least 2 assessments saved to compare.
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): Goodbye! Thanks for using 15-Minute Neighborhood Score.
+
+########## RUN 2: Corrupted JSON data file ##########
+Setup: wrote invalid JSON content into data/assessments.json before launch
+Input sequence: 2 (view all -- should trigger corrupted-file recovery), 0 (exit)
+
+Welcome to the 15-Minute Neighborhood Score tool.
+Assess how walkable your neighborhood is, and compare options
+to make more sustainable, informed housing decisions.
+
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): [!] The saved data file was unreadable and has been moved to '/Users/mdfadul/Documents/python final project/data/assessments.json.bak'. Starting with an empty history.
+============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+No assessments yet. Choose option 1 to create your first one.
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): Goodbye! Thanks for using 15-Minute Neighborhood Score.
+
+Welcome to the 15-Minute Neighborhood Score tool.
+Assess how walkable your neighborhood is, and compare options
+to make more sustainable, informed housing decisions.
+
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): [ERROR] '9' is not a valid option. Please choose one of: 0, 1, 2, 3, 4, 5, 6, 7, 8.
+Select an option (0-8): [ERROR] '-1' is not a valid option. Please choose one of: 0, 1, 2, 3, 4, 5, 6, 7, 8.
+Select an option (0-8): [ERROR] 'abc' is not a valid option. Please choose one of: 0, 1, 2, 3, 4, 5, 6, 7, 8.
+Select an option (0-8): [ERROR] '' is not a valid option. Please choose one of: 0, 1, 2, 3, 4, 5, 6, 7, 8.
+Select an option (0-8): ============================================================
+                NEW NEIGHBORHOOD ASSESSMENT                 
+============================================================
+Enter a nickname for this neighborhood: [ERROR] This field cannot be empty. Please enter a value.
+Enter a nickname for this neighborhood: Enter an optional location note (or press Enter to skip): 
+Enter the estimated one-way WALKING time (minutes) to the
+NEAREST place in each category (0-180).
+
+Grocery / Fresh Food Access (minutes): [ERROR] 'abc' is not a valid number. Please enter minutes as a number (e.g. 8 or 12.5).
+Grocery / Fresh Food Access (minutes): [ERROR] Value cannot be negative. Please enter a value between 0 and 180.
+Grocery / Fresh Food Access (minutes): Healthcare / Pharmacy (minutes): Education / Childcare (minutes): Public Transit Access (minutes): Parks / Green Space (minutes): Everyday Retail & Services (minutes): 
+[OK] Assessment #1 "Current Apartment" saved.
+
+============================================================
+         SCORE BREAKDOWN: Current Apartment  (ID 1)         
+============================================================
+Location note: Jalan Ampang, KL
+Category                        Minutes   Tier      Points
+------------------------------------------------------------
+Grocery / Fresh Food Access         4.0   100%   20.0 / 20
+Healthcare / Pharmacy              12.0    50%    7.5 / 15
+Education / Childcare              20.0    20%    3.0 / 15
+Public Transit Access               3.0   100%   20.0 / 20
+Parks / Green Space                 9.0    75%   11.3 / 15
+Everyday Retail & Services          7.0    75%   11.3 / 15
+------------------------------------------------------------
+TOTAL SCORE: 73.0 / 100   ->   Rating: GOOD
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                NEW NEIGHBORHOOD ASSESSMENT                 
+============================================================
+Enter a nickname for this neighborhood: Enter an optional location note (or press Enter to skip): 
+Enter the estimated one-way WALKING time (minutes) to the
+NEAREST place in each category (0-180).
+
+Grocery / Fresh Food Access (minutes): Healthcare / Pharmacy (minutes): Education / Childcare (minutes): Public Transit Access (minutes): Parks / Green Space (minutes): Everyday Retail & Services (minutes): 
+[OK] Assessment #2 "Perfect Score Home" saved.
+
+============================================================
+        SCORE BREAKDOWN: Perfect Score Home  (ID 2)         
+============================================================
+Category                        Minutes   Tier      Points
+------------------------------------------------------------
+Grocery / Fresh Food Access         2.0   100%   20.0 / 20
+Healthcare / Pharmacy               3.0   100%   15.0 / 15
+Education / Childcare               1.0   100%   15.0 / 15
+Public Transit Access               4.0   100%   20.0 / 20
+Parks / Green Space                 5.0   100%   15.0 / 15
+Everyday Retail & Services          2.0   100%   15.0 / 15
+------------------------------------------------------------
+TOTAL SCORE: 100.0 / 100   ->   Rating: EXCELLENT
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                NEW NEIGHBORHOOD ASSESSMENT                 
+============================================================
+Enter a nickname for this neighborhood: Enter an optional location note (or press Enter to skip): 
+Enter the estimated one-way WALKING time (minutes) to the
+NEAREST place in each category (0-180).
+
+Grocery / Fresh Food Access (minutes): Healthcare / Pharmacy (minutes): Education / Childcare (minutes): Public Transit Access (minutes): Parks / Green Space (minutes): Everyday Retail & Services (minutes): 
+[OK] Assessment #3 "Car Dependent Suburb" saved.
+
+============================================================
+       SCORE BREAKDOWN: Car Dependent Suburb  (ID 3)        
+============================================================
+Category                        Minutes   Tier      Points
+------------------------------------------------------------
+Grocery / Fresh Food Access        30.0     0%    0.0 / 20
+Healthcare / Pharmacy              40.0     0%    0.0 / 15
+Education / Childcare              35.0     0%    0.0 / 15
+Public Transit Access              50.0     0%    0.0 / 20
+Parks / Green Space                28.0     0%    0.0 / 15
+Everyday Retail & Services         33.0     0%    0.0 / 15
+------------------------------------------------------------
+TOTAL SCORE: 0.0 / 100   ->   Rating: POOR
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                NEW NEIGHBORHOOD ASSESSMENT                 
+============================================================
+Enter a nickname for this neighborhood: Enter an optional location note (or press Enter to skip): 
+Enter the estimated one-way WALKING time (minutes) to the
+NEAREST place in each category (0-180).
+
+Grocery / Fresh Food Access (minutes): Healthcare / Pharmacy (minutes): Education / Childcare (minutes): Public Transit Access (minutes): Parks / Green Space (minutes): Everyday Retail & Services (minutes): 
+[OK] Assessment #4 "Edge Test A" saved.
+
+============================================================
+            SCORE BREAKDOWN: Edge Test A  (ID 4)            
+============================================================
+Category                        Minutes   Tier      Points
+------------------------------------------------------------
+Grocery / Fresh Food Access         5.0   100%   20.0 / 20
+Healthcare / Pharmacy               6.0    75%   11.3 / 15
+Education / Childcare              10.0    75%   11.3 / 15
+Public Transit Access              11.0    50%   10.0 / 20
+Parks / Green Space                15.0    50%    7.5 / 15
+Everyday Retail & Services         16.0    20%    3.0 / 15
+------------------------------------------------------------
+TOTAL SCORE: 63.0 / 100   ->   Rating: FAIR
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                NEW NEIGHBORHOOD ASSESSMENT                 
+============================================================
+Enter a nickname for this neighborhood: Enter an optional location note (or press Enter to skip): 
+Enter the estimated one-way WALKING time (minutes) to the
+NEAREST place in each category (0-180).
+
+Grocery / Fresh Food Access (minutes): [ERROR] That doesn't look realistic (max 180). Please re-enter a value between 0 and 180.
+Grocery / Fresh Food Access (minutes): Healthcare / Pharmacy (minutes): Education / Childcare (minutes): Public Transit Access (minutes): Parks / Green Space (minutes): Everyday Retail & Services (minutes): 
+[OK] Assessment #5 "Edge Test B" saved.
+
+============================================================
+            SCORE BREAKDOWN: Edge Test B  (ID 5)            
+============================================================
+Category                        Minutes   Tier      Points
+------------------------------------------------------------
+Grocery / Fresh Food Access        25.0    20%    4.0 / 20
+Healthcare / Pharmacy              26.0     0%    0.0 / 15
+Education / Childcare               0.0   100%   15.0 / 15
+Public Transit Access               1.0   100%   20.0 / 20
+Parks / Green Space                 2.0   100%   15.0 / 15
+Everyday Retail & Services          3.0   100%   15.0 / 15
+------------------------------------------------------------
+TOTAL SCORE: 69.0 / 100   ->   Rating: FAIR
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment              73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb            0.0/100  Poor
+[ 4] Edge Test A                    63.0/100  Fair
+[ 5] Edge Test B                    69.0/100  Fair
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment              73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb            0.0/100  Poor
+[ 4] Edge Test A                    63.0/100  Fair
+[ 5] Edge Test B                    69.0/100  Fair
+------------------------------------------------------------
+Enter Assessment ID for recommendations: ============================================================
+                      RECOMMENDATIONS                       
+============================================================
+- Education / Childcare: Schools or childcare are far away. Carpooling groups or petitioning for a satellite childcare centre may help.
+- Healthcare / Pharmacy: No nearby clinic or pharmacy. Look into telehealth options, or raise this gap with local health authorities.
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment              73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb            0.0/100  Poor
+[ 4] Edge Test A                    63.0/100  Fair
+[ 5] Edge Test B                    69.0/100  Fair
+------------------------------------------------------------
+Enter Assessment ID for recommendations: ============================================================
+                      RECOMMENDATIONS                       
+============================================================
+- This neighborhood scores at or near the maximum -- no major accessibility gaps were found. Great example of a 15-minute neighborhood!
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment              73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb            0.0/100  Poor
+[ 4] Edge Test A                    63.0/100  Fair
+[ 5] Edge Test B                    69.0/100  Fair
+------------------------------------------------------------
+Enter Assessment ID for recommendations: ============================================================
+                      RECOMMENDATIONS                       
+============================================================
+- Grocery / Fresh Food Access: Limited fresh food access nearby. Consider advocating for a local farmers market, mini-mart, or community garden.
+- Healthcare / Pharmacy: No nearby clinic or pharmacy. Look into telehealth options, or raise this gap with local health authorities.
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment              73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb            0.0/100  Poor
+[ 4] Edge Test A                    63.0/100  Fair
+[ 5] Edge Test B                    69.0/100  Fair
+------------------------------------------------------------
+Enter ID of first assessment: Enter ID of second assessment: ============================================================
+                    COMPARE ASSESSMENTS                     
+============================================================
+Option A = Perfect Score Home (ID 2)
+Option B = Car Dependent Suburb (ID 3)
+------------------------------------------------------------
+Category                             Option A       Option B
+------------------------------------------------------------
+Grocery / Fresh Food Access              20.0            0.0
+Healthcare / Pharmacy                    15.0            0.0
+Education / Childcare                    15.0            0.0
+Public Transit Access                    20.0            0.0
+Parks / Green Space                      15.0            0.0
+Everyday Retail & Services               15.0            0.0
+------------------------------------------------------------
+TOTAL SCORE                             100.0            0.0
+RATING                              Excellent           Poor
+------------------------------------------------------------
+Verdict: 'Perfect Score Home' is the more walkable 15-minute neighborhood.
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment              73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb            0.0/100  Poor
+[ 4] Edge Test A                    63.0/100  Fair
+[ 5] Edge Test B                    69.0/100  Fair
+------------------------------------------------------------
+Enter ID of first assessment: Enter ID of second assessment: [ERROR] Please choose two different assessments to compare.
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment              73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb            0.0/100  Poor
+[ 4] Edge Test A                    63.0/100  Fair
+[ 5] Edge Test B                    69.0/100  Fair
+------------------------------------------------------------
+Enter Assessment ID to edit: 
+What would you like to edit?
+1. Nickname
+2. Location note
+3. One category's walking time
+Select an option (1-3): 1. Grocery / Fresh Food Access
+2. Healthcare / Pharmacy
+3. Education / Childcare
+4. Public Transit Access
+5. Parks / Green Space
+6. Everyday Retail & Services
+Select category number: New walking time for Grocery / Fresh Food Access (minutes): [OK] Assessment updated.
+============================================================
+       SCORE BREAKDOWN: Car Dependent Suburb  (ID 3)        
+============================================================
+Category                        Minutes   Tier      Points
+------------------------------------------------------------
+Grocery / Fresh Food Access         4.0   100%   20.0 / 20
+Healthcare / Pharmacy              40.0     0%    0.0 / 15
+Education / Childcare              35.0     0%    0.0 / 15
+Public Transit Access              50.0     0%    0.0 / 20
+Parks / Green Space                28.0     0%    0.0 / 15
+Everyday Retail & Services         33.0     0%    0.0 / 15
+------------------------------------------------------------
+TOTAL SCORE: 20.0 / 100   ->   Rating: POOR
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment              73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb           20.0/100  Poor
+[ 4] Edge Test A                    63.0/100  Fair
+[ 5] Edge Test B                    69.0/100  Fair
+------------------------------------------------------------
+Enter Assessment ID to edit: 
+What would you like to edit?
+1. Nickname
+2. Location note
+3. One category's walking time
+Select an option (1-3): Enter new nickname: [OK] Assessment updated.
+============================================================
+    SCORE BREAKDOWN: Current Apartment (Updated)  (ID 1)    
+============================================================
+Location note: Jalan Ampang, KL
+Category                        Minutes   Tier      Points
+------------------------------------------------------------
+Grocery / Fresh Food Access         4.0   100%   20.0 / 20
+Healthcare / Pharmacy              12.0    50%    7.5 / 15
+Education / Childcare              20.0    20%    3.0 / 15
+Public Transit Access               3.0   100%   20.0 / 20
+Parks / Green Space                 9.0    75%   11.3 / 15
+Everyday Retail & Services          7.0    75%   11.3 / 15
+------------------------------------------------------------
+TOTAL SCORE: 73.0 / 100   ->   Rating: GOOD
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment (Updated)    73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb           20.0/100  Poor
+[ 4] Edge Test A                    63.0/100  Fair
+[ 5] Edge Test B                    69.0/100  Fair
+------------------------------------------------------------
+Enter Assessment ID to delete: Delete 'Edge Test A' (ID 4)? (y/n): [ERROR] 'maybe' is not a valid option. Please choose one of: y, n.
+Delete 'Edge Test A' (ID 4)? (y/n): [OK] Delete cancelled.
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment (Updated)    73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb           20.0/100  Poor
+[ 4] Edge Test A                    63.0/100  Fair
+[ 5] Edge Test B                    69.0/100  Fair
+------------------------------------------------------------
+Enter Assessment ID to delete: Delete 'Edge Test A' (ID 4)? (y/n): [OK] Assessment #4 deleted.
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment (Updated)    73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb           20.0/100  Poor
+[ 5] Edge Test B                    69.0/100  Fair
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                NEW NEIGHBORHOOD ASSESSMENT                 
+============================================================
+Enter a nickname for this neighborhood: Enter an optional location note (or press Enter to skip): 
+Enter the estimated one-way WALKING time (minutes) to the
+NEAREST place in each category (0-180).
+
+Grocery / Fresh Food Access (minutes): Healthcare / Pharmacy (minutes): Education / Childcare (minutes): Public Transit Access (minutes): Parks / Green Space (minutes): Everyday Retail & Services (minutes): 
+[OK] Assessment #6 "Taman Desa Petaling Apartment Block C Unit 5-2" saved.
+
+============================================================
+  SCORE BREAKDOWN: Taman Desa Petaling Apartment…  (ID 6)   
+============================================================
+Category                        Minutes   Tier      Points
+------------------------------------------------------------
+Grocery / Fresh Food Access         3.0   100%   20.0 / 20
+Healthcare / Pharmacy               4.0   100%   15.0 / 15
+Education / Childcare               2.0   100%   15.0 / 15
+Public Transit Access               3.0   100%   20.0 / 20
+Parks / Green Space                 6.0    75%   11.3 / 15
+Everyday Retail & Services          4.0   100%   15.0 / 15
+------------------------------------------------------------
+TOTAL SCORE: 96.3 / 100   ->   Rating: EXCELLENT
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment (Updated)    73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb           20.0/100  Poor
+[ 5] Edge Test B                    69.0/100  Fair
+[ 6] Taman Desa Petaling Apartme…   96.3/100  Excellent
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                      ALL ASSESSMENTS                       
+============================================================
+[ 1] Current Apartment (Updated)    73.0/100  Good
+[ 2] Perfect Score Home            100.0/100  Excellent
+[ 3] Car Dependent Suburb           20.0/100  Poor
+[ 5] Edge Test B                    69.0/100  Fair
+[ 6] Taman Desa Petaling Apartme…   96.3/100  Excellent
+------------------------------------------------------------
+Enter ID of first assessment: Enter ID of second assessment: ============================================================
+                    COMPARE ASSESSMENTS                     
+============================================================
+Option A = Current Apartment (Updated) (ID 1)
+Option B = Taman Desa Petaling Apartment Block C Unit 5-2 (ID 6)
+------------------------------------------------------------
+Category                             Option A       Option B
+------------------------------------------------------------
+Grocery / Fresh Food Access              20.0           20.0
+Healthcare / Pharmacy                     7.5           15.0
+Education / Childcare                     3.0           15.0
+Public Transit Access                    20.0           20.0
+Parks / Green Space                      11.3           11.3
+Everyday Retail & Services               11.3           15.0
+------------------------------------------------------------
+TOTAL SCORE                              73.0           96.3
+RATING                                   Good      Excellent
+------------------------------------------------------------
+Verdict: 'Taman Desa Petaling Apartment Block C Unit 5-2' is the more walkable 15-minute neighborhood.
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): ============================================================
+                 ABOUT SDG 11 & METHODOLOGY                 
+============================================================
+SDG 11 (Sustainable Cities and Communities) calls for inclusive, safe,
+resilient, and sustainable urban areas with access to green space and
+affordable, accessible transport. The '15-minute city' concept holds
+that residents should be able to reach daily essentials within a
+15-minute walk, reducing car dependency and emissions.
+
+This tool scores a neighborhood (0-100) across 6 weighted categories:
+------------------------------------------------------------
+  Grocery / Fresh Food Access      weight 20
+  Healthcare / Pharmacy            weight 15
+  Education / Childcare            weight 15
+  Public Transit Access            weight 20
+  Parks / Green Space              weight 15
+  Everyday Retail & Services       weight 15
+------------------------------------------------------------
+Each category's walking time earns a tier percentage of its weight:
+  <=5 min: 100%   6-10 min: 75%   11-15 min: 50%
+  16-25 min: 20%   >25 min: 0%
+------------------------------------------------------------
+============================================================
+           15-MINUTE NEIGHBORHOOD SCORE  (SDG 11)           
+============================================================
+1. Create New Assessment
+2. View All Assessments
+3. View Assessment Detail & Score Breakdown
+4. View Recommendations
+5. Compare Two Assessments
+6. Edit an Assessment
+7. Delete an Assessment
+8. About SDG 11 & Methodology
+0. Exit
+============================================================
+Select an option (0-8): Goodbye! Thanks for using 15-Minute Neighborhood Score.
+
+
+======================================================================
+BUG FOUND & FIXED DURING TESTING
+======================================================================
+The initial version of print_comparison() in ui.py embedded each
+assessment's nickname directly into a fixed-width (15-char) table
+column header. Because Python's format specifiers only pad short
+strings and never truncate long ones, a nickname longer than the
+column (e.g. 'Perfect Score Home (ID 2)', 26 chars) ran straight into
+the next column with no separating space, breaking the table layout.
+
+Fix: the compare table now prints fixed 'Option A' / 'Option B'
+column headers (always constant width) with the full nicknames shown
+in a legend line above the table instead. A general-purpose
+truncate_text() helper was also added and applied to the history-list
+and score-breakdown views as a second line of defense for long
+nicknames. Verified working against a 48-character nickname above.

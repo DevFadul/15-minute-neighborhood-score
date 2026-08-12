@@ -57,7 +57,14 @@
       <tbody class="divide-y divide-slate-100">
         {% for row in result.rows %}
         <tr>
-          <td class="px-4 py-3">{{ row.label }}</td>
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2.5">
+              <span class="w-6 h-6 rounded-md bg-{{ category_accents[row.key] }}-100 text-{{ category_accents[row.key] }}-600 p-1 shrink-0">
+                {{ category_icons[row.key] }}
+              </span>
+              {{ row.label }}
+            </div>
+          </td>
           <td class="px-4 py-3 text-right {{ 'text-emerald-600 font-semibold' if row.a_wins }}">{{ row.points_a }}</td>
           <td class="px-4 py-3 text-right {{ 'text-emerald-600 font-semibold' if row.b_wins }}">{{ row.points_b }}</td>
         </tr>

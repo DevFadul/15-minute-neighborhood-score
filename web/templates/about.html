@@ -14,13 +14,59 @@
   </p>
 </div>
 
+<div class="card p-6 mb-6">
+  <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-1 text-center">
+    The 15-Minute Walk Zone
+  </h2>
+  <p class="text-xs text-slate-400 text-center mb-2">Illustrative -- actual scoring uses each category's own tier table.</p>
+  <svg viewBox="0 0 400 390" class="w-full max-w-md mx-auto">
+    <circle cx="200" cy="195" r="155" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.25"/>
+    <circle cx="200" cy="195" r="105" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.4"/>
+    <circle cx="200" cy="195" r="55" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.6"/>
+
+    {% set markers = [
+      ("grocery", 295, 195), ("healthcare", 248, 113), ("education", 153, 113),
+      ("transit", 105, 195), ("parks", 153, 277), ("retail", 248, 277)
+    ] %}
+    {% for key, x, y in markers %}
+      <line x1="200" y1="195" x2="{{ x }}" y2="{{ y }}" stroke="#cbd5e1" stroke-width="1"/>
+    {% endfor %}
+
+    <circle cx="200" cy="195" r="26" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+    <svg x="188" y="183" width="24" height="24" class="text-emerald-700">{{ icon_home }}</svg>
+    <text x="200" y="234" text-anchor="middle" class="fill-slate-500" font-size="11">You</text>
+
+    {% for key, x, y in markers %}
+      <circle cx="{{ x }}" cy="{{ y }}" r="21" fill="white" stroke="currentColor"
+              class="text-{{ category_accents[key] }}-400"/>
+      <svg x="{{ x - 11 }}" y="{{ y - 11 }}" width="22" height="22" class="text-{{ category_accents[key] }}-600">
+        {{ category_icons[key] }}
+      </svg>
+      <text x="{{ x }}" y="{{ y + 34 }}" text-anchor="middle" class="fill-slate-500" font-size="11">
+        {{ categories[key].label.split(' /')[0].split(' &')[0] }}
+      </text>
+    {% endfor %}
+  </svg>
+  <div class="flex items-center justify-center gap-4 text-xs text-slate-400 mt-2">
+    <span class="flex items-center gap-1"><span class="w-3 border-t-2 border-dashed border-emerald-600 opacity-60"></span> 5 min</span>
+    <span class="flex items-center gap-1"><span class="w-3 border-t-2 border-dashed border-emerald-600 opacity-40"></span> 10 min</span>
+    <span class="flex items-center gap-1"><span class="w-3 border-t-2 border-dashed border-emerald-600 opacity-25"></span> 15 min</span>
+  </div>
+</div>
+
 <div class="grid gap-6 lg:grid-cols-2">
   <div class="card p-6">
     <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Category Weights</h2>
-    <ul class="space-y-2 text-sm">
-      {% for info in categories.values() %}
-        <li class="flex justify-between">
-          <span>{{ info.label }}</span><span class="font-semibold">{{ info.weight }}</span>
+    <ul class="space-y-3 text-sm">
+      {% for key, info in categories.items() %}
+        <li class="flex items-center justify-between">
+          <span class="flex items-center gap-2.5">
+            <span class="w-6 h-6 rounded-md bg-{{ category_accents[key] }}-100 text-{{ category_accents[key] }}-600 p-1 shrink-0">
+              {{ category_icons[key] }}
+            </span>
+            {{ info.label }}
+          </span>
+          <span class="font-semibold">{{ info.weight }}</span>
         </li>
       {% endfor %}
     </ul>

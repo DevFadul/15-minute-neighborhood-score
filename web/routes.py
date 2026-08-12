@@ -105,6 +105,7 @@ def detail(assessment_id):
     for category_key, info in CATEGORIES.items():
         minutes = assessment.get_time(category_key)
         breakdown.append({
+            "key": category_key,
             "label": info["label"],
             "minutes": minutes,
             "tier_percent": calculator.get_tier_percentage(minutes) * 100,
@@ -201,6 +202,7 @@ def _build_comparison(calculator, assessment_a, assessment_b):
         points_a = calculator.calculate_category_score(category_key, assessment_a.get_time(category_key))
         points_b = calculator.calculate_category_score(category_key, assessment_b.get_time(category_key))
         rows.append({
+            "key": category_key,
             "label": info["label"],
             "points_a": round_half_up(points_a),
             "points_b": round_half_up(points_b),

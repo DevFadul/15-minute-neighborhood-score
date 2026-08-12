@@ -2,15 +2,36 @@
 {% block title %}Dashboard — 15-Minute Neighborhood Score{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-bold text-slate-900">Your Assessments</h1>
-  <a href="{{ url_for('main.new_assessment') }}" class="btn-primary">+ New Assessment</a>
+<div class="rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-700 text-white p-8 mb-8 overflow-hidden relative">
+  <svg viewBox="0 0 400 200" class="absolute inset-0 w-full h-full opacity-10" preserveAspectRatio="xMidYMid slice">
+    <circle cx="340" cy="40" r="90" fill="none" stroke="white" stroke-width="2"/>
+    <circle cx="340" cy="40" r="55" fill="none" stroke="white" stroke-width="2"/>
+    <circle cx="40" cy="180" r="70" fill="none" stroke="white" stroke-width="2"/>
+  </svg>
+  <div class="relative">
+    <h1 class="text-2xl font-bold">Your Assessments</h1>
+    <p class="text-emerald-100 text-sm mt-1 max-w-md">
+      Score how many daily essentials you can reach within a 15-minute walk, and compare
+      neighborhoods side by side.
+    </p>
+    <a href="{{ url_for('main.new_assessment') }}"
+       class="inline-block mt-4 bg-white text-emerald-700 hover:bg-emerald-50 font-semibold px-5 py-2.5 rounded-lg shadow-sm transition">
+      + New Assessment
+    </a>
+  </div>
 </div>
 
 {% if not rows %}
-  <div class="card p-10 text-center text-slate-500">
-    No assessments yet.
-    <a href="{{ url_for('main.new_assessment') }}" class="text-emerald-600 font-medium">Create your first one</a>.
+  <div class="card p-10 text-center">
+    <svg viewBox="0 0 160 110" class="w-40 h-28 mx-auto text-emerald-500">
+      <ellipse cx="80" cy="96" rx="52" ry="7" fill="currentColor" opacity="0.08"/>
+      <circle cx="80" cy="48" r="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 5" opacity="0.4"/>
+      <svg x="64" y="32" width="32" height="32">{{ icon_pin }}</svg>
+    </svg>
+    <p class="text-slate-500 mt-2">
+      No assessments yet.
+      <a href="{{ url_for('main.new_assessment') }}" class="text-emerald-600 font-medium">Create your first one</a>.
+    </p>
   </div>
 {% else %}
   <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -29,7 +29,8 @@
 <body class="h-full bg-slate-50 text-slate-800">
   <nav class="bg-emerald-700 text-white shadow-md">
     <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-2">
-      <a href="{{ url_for('main.index') }}" class="font-semibold text-lg tracking-tight">
+      <a href="{{ url_for('main.index') }}" class="flex items-center gap-2 font-semibold text-lg tracking-tight">
+        <span class="w-7 h-7 rounded-full bg-white/15 p-1.5">{{ icon_pin }}</span>
         15-Minute Neighborhood Score
       </a>
       <div class="flex gap-4 text-sm font-medium">

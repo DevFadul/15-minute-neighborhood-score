@@ -50,7 +50,14 @@
     <tbody class="divide-y divide-slate-100">
       {% for row in breakdown %}
       <tr>
-        <td class="px-4 py-3">{{ row.label }}</td>
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-2.5">
+            <span class="w-7 h-7 rounded-md bg-{{ category_accents[row.key] }}-100 text-{{ category_accents[row.key] }}-600 p-1.5 shrink-0">
+              {{ category_icons[row.key] }}
+            </span>
+            {{ row.label }}
+          </div>
+        </td>
         <td class="px-4 py-3 text-right">{{ row.minutes }}</td>
         <td class="px-4 py-3 text-right">{{ row.tier_percent | round(0) | int }}%</td>
         <td class="px-4 py-3 text-right font-medium">{{ row.points }} / {{ row.weight }}</td>

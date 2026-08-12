@@ -75,4 +75,4 @@ python3 main.py
 
 ## GitHub Repository
 
-`[https://github.com/<your-username>/15-minute-neighborhood-score]`
+https://github.com/DevFadul/15-minute-neighborhood-score

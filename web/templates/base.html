@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}15-Minute Neighborhood Score{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style type="text/tailwindcss">
+    .input-field {
+      @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition;
+    }
+    .btn-primary {
+      @apply bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-sm transition;
+    }
+    .btn-secondary {
+      @apply px-5 py-2.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 font-medium transition;
+    }
+    .card {
+      @apply bg-white border border-slate-200 rounded-xl;
+    }
+    .badge {
+      @apply text-xs font-semibold px-2.5 py-1 rounded-full;
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full bg-slate-50 text-slate-800">
+  <nav class="bg-emerald-700 text-white shadow-md">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-2">
+      <a href="{{ url_for('main.index') }}" class="font-semibold text-lg tracking-tight">
+        15-Minute Neighborhood Score
+      </a>
+      <div class="flex gap-4 text-sm font-medium">
+        <a href="{{ url_for('main.index') }}" class="hover:text-emerald-200">Dashboard</a>
+        <a href="{{ url_for('main.new_assessment') }}" class="hover:text-emerald-200">New Assessment</a>
+        <a href="{{ url_for('main.compare') }}" class="hover:text-emerald-200">Compare</a>
+        <a href="{{ url_for('main.about') }}" class="hover:text-emerald-200">About</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-6 space-y-2">
+          {% for category, message in messages %}
+            <div class="rounded-lg px-4 py-3 text-sm font-medium
+                        {{ 'bg-rose-50 text-rose-700 border border-rose-200' if category == 'error'
+                           else 'bg-emerald-50 text-emerald-700 border border-emerald-200' }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="text-center text-xs text-slate-400 py-8">
+    SDG 11: Sustainable Cities and Communities &middot; BIT2083 Final Project
+  </footer>
+</body>
+</html>

@@ -1,2 +1,5 @@
-# No external dependencies -- Python 3 standard library only
-# (json, datetime, os -- all built in).
+# The console app (main.py) has no external dependencies -- Python 3
+# standard library only (json, datetime, os -- all built in).
+#
+# The optional web UI (run_web.py) needs Flask:
+flask

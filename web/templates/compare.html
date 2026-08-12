@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Compare Assessments{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-900 mb-6">Compare Assessments</h1>
+
+<form method="get" class="card p-6 mb-6 flex flex-wrap items-end gap-4">
+  <div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Option A</label>
+    <select name="a" class="input-field">
+      <option value="">Select...</option>
+      {% for a in assessments %}
+        <option value="{{ a.assessment_id }}" {{ 'selected' if id_a == a.assessment_id }}>
+          {{ a.nickname }} (ID {{ a.assessment_id }})
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="block text-sm font-medium text-slate-700 mb-1">Option B</label>
+    <select name="b" class="input-field">
+      <option value="">Select...</option>
+      {% for a in assessments %}
+        <option value="{{ a.assessment_id }}" {{ 'selected' if id_b == a.assessment_id }}>
+          {{ a.nickname }} (ID {{ a.assessment_id }})
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="btn-primary">Compare</button>
+</form>
+
+{% if result %}
+  <div class="card overflow-hidden">
+    <div class="grid grid-cols-2 divide-x divide-slate-100 text-center py-4 bg-slate-50">
+      <div>
+        <p class="font-semibold text-slate-900">{{ result.a.nickname }}</p>
+        <span class="badge bg-{{ colors[result.rating_a] }}-100 text-{{ colors[result.rating_a] }}-700">
+          {{ result.rating_a }}
+        </span>
+      </div>
+      <div>
+        <p class="font-semibold text-slate-900">{{ result.b.nickname }}</p>
+        <span class="badge bg-{{ colors[result.rating_b] }}-100 text-{{ colors[result.rating_b] }}-700">
+          {{ result.rating_b }}
+        </span>
+      </div>
+    </div>
+    <table class="w-full text-sm">
+      <thead class="text-slate-500 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="text-left px-4 py-3">Category</th>
+          <th class="text-right px-4 py-3">{{ result.a.nickname }}</th>
+          <th class="text-right px-4 py-3">{{ result.b.nickname }}</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for row in result.rows %}
+        <tr>
+          <td class="px-4 py-3">{{ row.label }}</td>
+          <td class="px-4 py-3 text-right {{ 'text-emerald-600 font-semibold' if row.a_wins }}">{{ row.points_a }}</td>
+          <td class="px-4 py-3 text-right {{ 'text-emerald-600 font-semibold' if row.b_wins }}">{{ row.points_b }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="border-t border-slate-200 font-semibold">
+          <td class="px-4 py-3">Total Score</td>
+          <td class="px-4 py-3 text-right">{{ result.score_a }}</td>
+          <td class="px-4 py-3 text-right">{{ result.score_b }}</td>
+        </tr>
+      </tfoot>
+    </table>
+    <div class="px-4 py-4 bg-slate-50 text-sm text-slate-700">
+      {% if result.winner %}
+        Verdict: <strong>{{ result.winner.nickname }}</strong> is the more walkable 15-minute neighborhood.
+      {% else %}
+        Verdict: Both neighborhoods score equally.
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

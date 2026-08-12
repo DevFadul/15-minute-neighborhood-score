@@ -3,3 +3,4 @@ __pycache__/
 data/assessments.json
 data/assessments.json.bak
 .DS_Store
+venv/

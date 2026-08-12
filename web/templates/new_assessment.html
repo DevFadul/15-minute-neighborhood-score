@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}New Assessment — 15-Minute Neighborhood Score{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-900 mb-6">New Neighborhood Assessment</h1>
+
+<div class="grid gap-6 lg:grid-cols-3">
+  <form method="post" class="lg:col-span-2 card p-6 space-y-5"
+        hx-post="{{ url_for('main.preview_score') }}" hx-trigger="keyup changed delay:300ms, change"
+        hx-target="#score-preview" hx-swap="innerHTML">
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Nickname</label>
+      <input type="text" name="nickname" required value="{{ form.get('nickname', '') }}"
+             class="input-field" placeholder="e.g. Current Apartment">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Location note (optional)</label>
+      <input type="text" name="location_note" value="{{ form.get('location_note', '') }}"
+             class="input-field" placeholder="e.g. Jalan Ampang, KL">
+    </div>
+
+    <div class="pt-2 border-t border-slate-100">
+      <p class="text-sm text-slate-500 mb-3">
+        One-way walking time (minutes) to the nearest place in each category:
+      </p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        {% for key, info in categories.items() %}
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">{{ info.label }}</label>
+            <input type="number" step="0.5" min="0" max="{{ max_minutes }}" name="{{ key }}" required
+                   value="{{ form.get(key, '') }}" class="input-field">
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <button type="submit" class="btn-primary">Save Assessment</button>
+  </form>
+
+  <div class="card p-6 h-fit lg:sticky lg:top-6">
+    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Live Score Preview</h2>
+    <div id="score-preview">
+      {% include "_score_preview.html" %}
+    </div>
+  </div>
+</div>
+{% endblock %}

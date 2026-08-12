@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}About — SDG 11 & Methodology{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-900 mb-6">About SDG 11 & Methodology</h1>
+
+<div class="card p-6 mb-6 text-sm text-slate-700 leading-relaxed">
+  <p>
+    SDG 11 (Sustainable Cities and Communities) calls for inclusive, safe, resilient, and
+    sustainable urban areas with access to green space and affordable, accessible transport.
+    The "15-minute city" concept holds that residents should be able to reach daily essentials
+    within a 15-minute walk, reducing car dependency and emissions. This tool scores a
+    neighborhood from 0–100 across 6 weighted categories.
+  </p>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-2">
+  <div class="card p-6">
+    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Category Weights</h2>
+    <ul class="space-y-2 text-sm">
+      {% for info in categories.values() %}
+        <li class="flex justify-between">
+          <span>{{ info.label }}</span><span class="font-semibold">{{ info.weight }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card p-6">
+    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Walking-Time Tiers</h2>
+    <ul class="space-y-2 text-sm">
+      {% for tier in tiers %}
+        <li class="flex justify-between">
+          <span>{{ tier.label }}</span><span class="font-semibold">{{ tier.percent | int }}%</span>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card p-6 lg:col-span-2">
+    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Rating Bands</h2>
+    <div class="flex gap-3 flex-wrap">
+      {% for threshold, label in rating_bands %}
+        <span class="badge bg-{{ colors[label] }}-100 text-{{ colors[label] }}-700">
+          {{ label }} ({{ threshold }}+)
+        </span>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

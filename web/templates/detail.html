@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ assessment.nickname }} — Score Breakdown{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900">{{ assessment.nickname }}</h1>
+    {% if assessment.location_note %}
+      <p class="text-sm text-slate-500">{{ assessment.location_note }}</p>
+    {% endif %}
+  </div>
+  <div class="flex gap-2">
+    <a href="{{ url_for('main.edit_assessment', assessment_id=assessment.assessment_id) }}"
+       class="btn-secondary">Edit</a>
+    <form method="post" action="{{ url_for('main.delete_assessment', assessment_id=assessment.assessment_id) }}"
+          onsubmit="return confirm('Delete this assessment?');">
+      <button type="submit" class="px-5 py-2.5 rounded-lg border border-rose-300 text-rose-600 hover:bg-rose-50 font-medium transition">
+        Delete
+      </button>
+    </form>
+  </div>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-3 mb-6">
+  <div class="card p-6 flex flex-col items-center justify-center">
+    <div class="score-gauge" style="--score: {{ score }};">
+      <span class="text-3xl font-bold text-slate-900">{{ score }}</span>
+    </div>
+    <span class="badge mt-3 bg-{{ color }}-100 text-{{ color }}-700">{{ rating }}</span>
+  </div>
+  <div class="lg:col-span-2 card p-6">
+    <canvas id="radarChart" height="220"></canvas>
+  </div>
+</div>
+
+<div class="card overflow-hidden mb-6">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+      <tr>
+        <th class="text-left px-4 py-3">Category</th>
+        <th class="text-right px-4 py-3">Minutes</th>
+        <th class="text-right px-4 py-3">Tier</th>
+        <th class="text-right px-4 py-3">Points</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for row in breakdown %}
+      <tr>
+        <td class="px-4 py-3">{{ row.label }}</td>
+        <td class="px-4 py-3 text-right">{{ row.minutes }}</td>
+        <td class="px-4 py-3 text-right">{{ row.tier_percent | round(0) | int }}%</td>
+        <td class="px-4 py-3 text-right font-medium">{{ row.points }} / {{ row.weight }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card p-6">
+  <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Recommendations</h2>
+  <ul class="space-y-2 text-sm text-slate-700 list-disc list-inside">
+    {% for tip in tips %}
+      <li>{{ tip }}</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<script>
+  new Chart(document.getElementById('radarChart'), {
+    type: 'radar',
+    data: {
+      labels: {{ chart_labels | tojson }},
+      datasets: [{
+        label: 'Points earned',
+        data: {{ chart_points | tojson }},
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+        borderColor: 'rgb(5, 150, 105)',
+        pointBackgroundColor: 'rgb(5, 150, 105)',
+      }],
+    },
+    options: {
+      scales: { r: { beginAtZero: true, suggestedMax: 20 } },
+      plugins: { legend: { display: false } },
+    },
+  });
+</script>
+{% endblock %}

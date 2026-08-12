@@ -1,0 +1,8 @@
+{% if ready is defined and ready %}
+  <div class="text-4xl font-bold text-{{ color }}-600">
+    {{ score }}<span class="text-base text-slate-400 font-normal"> / 100</span>
+  </div>
+  <span class="badge inline-block mt-2 bg-{{ color }}-100 text-{{ color }}-700">{{ rating }}</span>
+{% else %}
+  <p class="text-sm text-slate-400">Fill in all six categories to see a live score.</p>
+{% endif %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — 15-Minute Neighborhood Score{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-slate-900">Your Assessments</h1>
+  <a href="{{ url_for('main.new_assessment') }}" class="btn-primary">+ New Assessment</a>
+</div>
+
+{% if not rows %}
+  <div class="card p-10 text-center text-slate-500">
+    No assessments yet.
+    <a href="{{ url_for('main.new_assessment') }}" class="text-emerald-600 font-medium">Create your first one</a>.
+  </div>
+{% else %}
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {% for row in rows %}
+      {% set a = row.assessment %}
+      <a href="{{ url_for('main.detail', assessment_id=a.assessment_id) }}"
+         class="card block p-5 shadow-sm hover:shadow-md hover:border-emerald-300 transition">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <h2 class="font-semibold text-slate-900">{{ a.nickname }}</h2>
+            {% if a.location_note %}
+              <p class="text-xs text-slate-500 mt-0.5">{{ a.location_note }}</p>
+            {% endif %}
+          </div>
+          <span class="badge shrink-0 bg-{{ row.color }}-100 text-{{ row.color }}-700">{{ row.rating }}</span>
+        </div>
+        <div class="mt-4 flex items-baseline gap-1">
+          <span class="text-3xl font-bold text-slate-900">{{ row.score }}</span>
+          <span class="text-sm text-slate-400">/ 100</span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

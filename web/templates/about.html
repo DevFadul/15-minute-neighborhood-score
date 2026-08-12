@@ -20,9 +20,9 @@
   </h2>
   <p class="text-xs text-slate-400 text-center mb-2">Illustrative -- actual scoring uses each category's own tier table.</p>
   <svg viewBox="0 0 400 390" class="w-full max-w-md mx-auto">
-    <circle cx="200" cy="195" r="155" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.25"/>
-    <circle cx="200" cy="195" r="105" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.4"/>
-    <circle cx="200" cy="195" r="55" fill="none" stroke="#059669" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.6"/>
+    <circle cx="200" cy="195" r="155" fill="none" stroke="#3d5c3e" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.25"/>
+    <circle cx="200" cy="195" r="105" fill="none" stroke="#3d5c3e" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.4"/>
+    <circle cx="200" cy="195" r="55" fill="none" stroke="#3d5c3e" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.6"/>
 
     {% set markers = [
       ("grocery", 295, 195), ("healthcare", 248, 113), ("education", 153, 113),
@@ -32,8 +32,8 @@
       <line x1="200" y1="195" x2="{{ x }}" y2="{{ y }}" stroke="#cbd5e1" stroke-width="1"/>
     {% endfor %}
 
-    <circle cx="200" cy="195" r="26" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
-    <svg x="188" y="183" width="24" height="24" class="text-emerald-700">{{ icon_home }}</svg>
+    <circle cx="200" cy="195" r="26" fill="#f0f4f0" stroke="#3d5c3e" stroke-width="2"/>
+    <svg x="188" y="183" width="24" height="24" class="text-forest-700">{{ icon_home }}</svg>
     <text x="200" y="234" text-anchor="middle" class="fill-slate-500" font-size="11">You</text>
 
     {% for key, x, y in markers %}
@@ -48,9 +48,9 @@
     {% endfor %}
   </svg>
   <div class="flex items-center justify-center gap-4 text-xs text-slate-400 mt-2">
-    <span class="flex items-center gap-1"><span class="w-3 border-t-2 border-dashed border-emerald-600 opacity-60"></span> 5 min</span>
-    <span class="flex items-center gap-1"><span class="w-3 border-t-2 border-dashed border-emerald-600 opacity-40"></span> 10 min</span>
-    <span class="flex items-center gap-1"><span class="w-3 border-t-2 border-dashed border-emerald-600 opacity-25"></span> 15 min</span>
+    <span class="flex items-center gap-1"><span class="w-3 border-t-2 border-dashed border-forest-600 opacity-60"></span> 5 min</span>
+    <span class="flex items-center gap-1"><span class="w-3 border-t-2 border-dashed border-forest-600 opacity-40"></span> 10 min</span>
+    <span class="flex items-center gap-1"><span class="w-3 border-t-2 border-dashed border-forest-600 opacity-25"></span> 15 min</span>
   </div>
 </div>
 

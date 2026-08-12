@@ -18,10 +18,19 @@ from web.forms import parse_category_times, validate_nickname
 bp = Blueprint("main", __name__)
 
 RATING_COLORS = {
-    "Excellent": "emerald",
+    "Excellent": "forest",
     "Good": "sky",
     "Fair": "amber",
     "Poor": "rose",
+}
+
+# Matches the Tailwind *-600 shade behind each RATING_COLORS name, for contexts
+# (the CSS conic-gradient score gauge, Chart.js) that need a real hex value.
+RATING_HEX = {
+    "Excellent": "#3d5c3e",
+    "Good": "#0284c7",
+    "Fair": "#d97706",
+    "Poor": "#e11d48",
 }
 
 
@@ -118,7 +127,7 @@ def detail(assessment_id):
     return render_template(
         "detail.html", assessment=assessment, breakdown=breakdown,
         score=round_half_up(total_score), rating=rating, color=RATING_COLORS[rating],
-        tips=tips,
+        gauge_color=RATING_HEX[rating], tips=tips,
         chart_labels=[row["label"] for row in breakdown],
         chart_points=[row["points"] for row in breakdown],
     )

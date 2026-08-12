@@ -4,3 +4,5 @@ data/assessments.json
 data/assessments.json.bak
 .DS_Store
 venv/
+.claude/skills/
+skills-lock.json

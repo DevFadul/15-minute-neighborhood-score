@@ -27,7 +27,7 @@
 
 <div class="grid gap-6 lg:grid-cols-3 mb-6">
   <div class="card p-6 flex flex-col items-center justify-center">
-    <div class="score-gauge" style="--score: {{ score }};">
+    <div class="score-gauge" style="--score: {{ score }}; --gauge-color: {{ gauge_color }};">
       <span class="text-3xl font-bold text-slate-900">{{ score }}</span>
     </div>
     <span class="badge mt-3 bg-{{ color }}-100 text-{{ color }}-700">{{ rating }}</span>
@@ -84,9 +84,9 @@
       datasets: [{
         label: 'Points earned',
         data: {{ chart_points | tojson }},
-        backgroundColor: 'rgba(16, 185, 129, 0.2)',
-        borderColor: 'rgb(5, 150, 105)',
-        pointBackgroundColor: 'rgb(5, 150, 105)',
+        backgroundColor: 'rgba(61, 92, 62, 0.18)',
+        borderColor: '{{ gauge_color }}',
+        pointBackgroundColor: '{{ gauge_color }}',
       }],
     },
     options: {

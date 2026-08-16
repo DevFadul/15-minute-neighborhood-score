@@ -2,48 +2,53 @@
 {% block title %}New Assessment — 15-Minute Neighborhood Score{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold text-slate-900 mb-6">New Neighborhood Assessment</h1>
+<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px;">
+  <h1 style="font-family:'Source Serif 4',serif;font-size:26px;font-weight:700;margin:0;color:var(--ink);">New Assessment</h1>
+  <a href="{{ url_for('main.dashboard') }}" class="btn-plain">&lsaquo; Cancel</a>
+</div>
 
-<div class="grid gap-6 lg:grid-cols-3">
-  <form method="post" class="lg:col-span-2 card p-6 space-y-5"
-        hx-post="{{ url_for('main.preview_score') }}" hx-trigger="keyup changed delay:300ms, change"
+<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:36px;align-items:start;">
+  <form method="post" class="panel" style="padding:24px;"
+        hx-post="{{ url_for('main.preview_score') }}" hx-trigger="input changed delay:250ms, change"
         hx-target="#score-preview" hx-swap="innerHTML">
-    <div>
-      <label class="block text-sm font-medium text-slate-700 mb-1">Nickname</label>
+    <div class="field">
+      <label class="field-label">Nickname</label>
       <input type="text" name="nickname" required value="{{ form.get('nickname', '') }}"
-             class="input-field" placeholder="e.g. Current Apartment">
+             placeholder="e.g. Current Apartment" class="field-input">
     </div>
-    <div>
-      <label class="block text-sm font-medium text-slate-700 mb-1">Location note (optional)</label>
+    <div class="field" style="margin-bottom:28px;">
+      <label class="field-label">Location note</label>
       <input type="text" name="location_note" value="{{ form.get('location_note', '') }}"
-             class="input-field" placeholder="e.g. Jalan Ampang, KL">
+             placeholder="e.g. Jalan Ampang, KL" class="field-input">
     </div>
 
-    <div class="pt-2 border-t border-slate-100">
-      <p class="text-sm text-slate-500 mb-3">
-        One-way walking time (minutes) to the nearest place in each category:
-      </p>
-      <div class="grid gap-4 sm:grid-cols-2">
-        {% for key, info in categories.items() %}
-          <div>
-            <label class="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
-              <span class="w-6 h-6 rounded-md bg-{{ category_accents[key] }}-100 text-{{ category_accents[key] }}-600 p-1 shrink-0">
-                {{ category_icons[key] }}
-              </span>
-              {{ info.label }}
-            </label>
-            <input type="number" step="0.5" min="0" max="{{ max_minutes }}" name="{{ key }}" required
-                   value="{{ form.get(key, '') }}" class="input-field">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink2);margin-bottom:16px;border-top:1px solid var(--line);padding-top:18px;">
+      One-Way Walking Time to Nearest &mdash;
+    </div>
+    {% for key, info in categories.items() %}
+      <div style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <span class="badge-letter" style="width:24px;height:24px;background:{{ category_colors[key] }};font-size:11px;">{{ category_letters[key] }}</span>
+            <span style="font-family:'Public Sans',sans-serif;font-size:13px;font-weight:600;color:var(--ink);">{{ info.label }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink2);flex-shrink:0;">{{ info.weight }}%</span>
           </div>
-        {% endfor %}
+          <output for="{{ key }}" style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink2);flex-shrink:0;">{{ form.get(key, 10) }} MIN</output>
+        </div>
+        <input type="range" id="{{ key }}" name="{{ key }}" min="0" max="{{ max_minutes }}" step="1"
+               value="{{ form.get(key, 10) }}" style="accent-color:{{ category_colors[key] }};width:100%;"
+               oninput="this.previousElementSibling.querySelector('output').textContent = this.value + ' MIN'">
       </div>
-    </div>
+    {% endfor %}
 
-    <button type="submit" class="btn-primary">Save Assessment</button>
+    <div style="display:flex;gap:12px;margin-top:28px;">
+      <button type="submit" class="btn btn-accent">Save Assessment</button>
+      <a href="{{ url_for('main.dashboard') }}" class="btn">Cancel</a>
+    </div>
   </form>
 
-  <div class="card p-6 h-fit lg:sticky lg:top-6">
-    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Live Score Preview</h2>
+  <div class="panel" style="position:sticky;top:24px;padding:22px;">
+    <div class="section-label">Live Score Preview</div>
     <div id="score-preview">
       {% include "_score_preview.html" %}
     </div>

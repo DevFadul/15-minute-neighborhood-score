@@ -1,80 +1,44 @@
 <!doctype html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}15-Minute Neighborhood Score{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
-          colors: {
-            forest: {
-              50: '#f0f4f0', 100: '#dbe5db', 200: '#b8cbb8', 300: '#8fac8f', 400: '#6b8f6c',
-              500: '#4f7350', 600: '#3d5c3e', 700: '#2f4830', 800: '#263a27', 900: '#1f2f20',
-            },
-            terracotta: {
-              50: '#fdf4ef', 100: '#fae3d5', 200: '#f3c4a8', 300: '#e9a077', 400: '#dd7c4d',
-              500: '#c1602f', 600: '#a44d24', 700: '#833e1e', 800: '#69331b', 900: '#562b19',
-            },
-            sand: { 50: '#fdfbf7', 100: '#f8f1e4', 200: '#f0e2c8', 300: '#e4cea3' },
-          },
-        },
-      },
-    };
-  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style type="text/tailwindcss">
-    .input-field {
-      @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-forest-500 focus:ring-1 focus:ring-forest-500 outline-none transition;
-    }
-    .btn-primary {
-      @apply bg-terracotta-600 hover:bg-terracotta-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-sm transition;
-    }
-    .btn-secondary {
-      @apply px-5 py-2.5 rounded-lg border border-sand-300 text-slate-600 hover:bg-sand-50 font-medium transition;
-    }
-    .card {
-      @apply bg-white border border-sand-200 rounded-xl;
-    }
-    .badge {
-      @apply text-xs font-semibold px-2.5 py-1 rounded-full;
-    }
-  </style>
   {% block extra_head %}{% endblock %}
 </head>
-<body class="h-full bg-sand-50 text-slate-800 font-sans">
-  <nav class="topo-pattern bg-forest-800 text-white shadow-md">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-2">
-      <a href="{{ url_for('main.index') }}" class="flex items-center gap-2 font-semibold text-lg tracking-tight">
-        <span class="w-7 h-7 rounded-full bg-white/15 p-1.5">{{ icon_pin }}</span>
-        15-Minute Neighborhood Score
+<body>
+{% block body %}
+  <div class="nav-chrome">
+    <div class="nav-inner">
+      <a href="{{ url_for('main.dashboard') }}" class="wordmark">
+        <svg width="30" height="30" viewBox="0 0 24 24">
+          <path d="M12 21s7-7.58 7-12A7 7 0 0 0 5 9c0 4.42 7 12 7 12z" fill="var(--brand)"></path>
+          <circle cx="12" cy="9" r="2.6" fill="var(--paper2)"></circle>
+        </svg>
+        <div>
+          <div class="wordmark-title">15-Minute Neighborhood Score</div>
+          <div class="wordmark-sub">SDG 11 &middot; Sustainable Cities &amp; Communities</div>
+        </div>
       </a>
-      <div class="flex gap-4 text-sm font-medium">
-        <a href="{{ url_for('main.index') }}" class="hover:text-terracotta-300 transition">Dashboard</a>
-        <a href="{{ url_for('main.new_assessment') }}" class="hover:text-terracotta-300 transition">New Assessment</a>
-        <a href="{{ url_for('main.compare') }}" class="hover:text-terracotta-300 transition">Compare</a>
-        <a href="{{ url_for('main.about') }}" class="hover:text-terracotta-300 transition">About</a>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="{{ url_for('main.compare') }}" class="btn">Compare</a>
+        <a href="{{ url_for('main.about') }}" class="btn">About</a>
+        <a href="{{ url_for('main.new_assessment') }}" class="btn btn-accent">+ New Assessment</a>
       </div>
     </div>
-  </nav>
+  </div>
 
-  <main class="max-w-5xl mx-auto px-4 py-8">
+  <main class="page">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <div class="mb-6 space-y-2">
+        <div style="margin-bottom:20px;display:flex;flex-direction:column;gap:8px;">
           {% for category, message in messages %}
-            <div class="rounded-lg px-4 py-3 text-sm font-medium
-                        {{ 'bg-rose-50 text-rose-700 border border-rose-200' if category == 'error'
-                           else 'bg-forest-50 text-forest-700 border border-forest-200' }}">
-              {{ message }}
-            </div>
+            <div class="flash {{ 'flash-error' if category == 'error' else 'flash-ok' }}">{{ message }}</div>
           {% endfor %}
         </div>
       {% endif %}
@@ -83,8 +47,7 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="text-center text-xs text-slate-400 py-8">
-    SDG 11: Sustainable Cities and Communities &middot; BIT2083 Final Project
-  </footer>
+  <footer class="page-footer">SDG 11: Sustainable Cities and Communities &middot; BIT2083 Final Project</footer>
+{% endblock %}
 </body>
 </html>

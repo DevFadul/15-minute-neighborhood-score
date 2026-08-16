@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% from "_map_sketch.html" import card_sketch, score_ring %}
+{% block title %}Dashboard — 15-Minute Neighborhood Score{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--ink);">
+  <div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);margin-bottom:6px;">Field Survey Tool</div>
+    <div style="font-family:'Source Serif 4',serif;font-size:28px;font-weight:700;color:var(--ink);">Your saved assessments</div>
+  </div>
+  <a href="{{ url_for('main.landing') }}" class="btn">Score a new location &rarr;</a>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;flex-wrap:wrap;gap:8px;">
+  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink2);">Saved Assessments ({{ cards|length }})</span>
+  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2);">Select two to compare</span>
+</div>
+
+{% if not cards %}
+  <div style="text-align:center;padding:80px 20px;border:1px dashed var(--line);">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink2);margin-bottom:14px;">No Assessments Yet</div>
+    <div style="font-family:'Public Sans',sans-serif;font-size:15px;color:var(--ink2);margin-bottom:22px;max-width:440px;margin-left:auto;margin-right:auto;">
+      Record walk times to groceries, healthcare, education, transit, parks, and retail to generate your first score.
+    </div>
+    <a href="{{ url_for('main.new_assessment') }}" class="btn btn-accent">+ New Assessment</a>
+  </div>
+{% else %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
+    {% for card in cards %}
+      {% set a = card.assessment %}
+      <div style="background:var(--paper2);border:1px solid var(--line);overflow:hidden;">
+        <div style="position:relative;height:150px;background:var(--surface);">
+          {{ card_sketch(card.sketch_blocks, card.sketch_pins) }}
+          <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(30,41,59,0.6), transparent 60%);"></div>
+          <div style="position:absolute;bottom:10px;left:14px;right:74px;color:white;">
+            <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:17px;">{{ a.nickname }}</div>
+            {% if a.location_note %}
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.04em;text-transform:uppercase;opacity:0.9;margin-top:2px;">{{ a.location_note }}</div>
+            {% endif %}
+          </div>
+          <div style="position:absolute;top:10px;right:10px;">{{ score_ring(card.ring_style, card.score, 'ring-56') }}</div>
+        </div>
+        <div style="padding:16px 18px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <span class="rating-label" style="color:{{ card.rating_var }};">{{ card.rating }}</span>
+            <label style="display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;color:var(--ink2);cursor:pointer;">
+              <input type="checkbox" class="compare-check" value="{{ a.assessment_id }}"
+                     style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer;" /> Compare
+            </label>
+          </div>
+          <div style="display:flex;gap:5px;margin-bottom:16px;">
+            {% for b in card.breakdown %}
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;" title="{{ b.label }}">
+                <div style="width:100%;height:30px;display:flex;align-items:flex-end;background:var(--line);overflow:hidden;">
+                  <div style="width:100%;background:{{ b.color }};height:{{ b.pct }}%;"></div>
+                </div>
+                <span style="width:14px;height:14px;color:{{ b.color }};">{{ category_icons[b.key] }}</span>
+              </div>
+            {% endfor %}
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:16px;border-top:1px solid var(--line);padding-top:14px;font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;">
+            <a href="{{ url_for('main.detail', assessment_id=a.assessment_id) }}">View &rarr;</a>
+            <a href="{{ url_for('main.edit_assessment', assessment_id=a.assessment_id) }}" style="color:var(--ink2);">Edit</a>
+            <form method="post" action="{{ url_for('main.delete_assessment', assessment_id=a.assessment_id) }}"
+                  onsubmit="return confirm('Delete this assessment?');" style="display:inline;">
+              <button type="submit" class="btn-plain" style="color:var(--poor);">Delete</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div id="compare-bar" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper2);padding:14px 22px;align-items:center;gap:18px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;border:1px solid var(--ink);z-index:2;">
+  <span id="compare-count">2 Selected</span>
+  <a id="compare-link" href="#" style="background:var(--accent);color:var(--paper2);border:1px solid var(--paper2);padding:8px 16px;">Compare &rarr;</a>
+</div>
+
+<script>
+(function () {
+  var checks = Array.prototype.slice.call(document.querySelectorAll('.compare-check'));
+  var bar = document.getElementById('compare-bar');
+  var countEl = document.getElementById('compare-count');
+  var link = document.getElementById('compare-link');
+  var selected = [];
+
+  checks.forEach(function (box) {
+    box.addEventListener('change', function () {
+      if (box.checked) {
+        selected.push(box.value);
+        if (selected.length > 2) {
+          var dropped = selected.shift();
+          checks.forEach(function (b) { if (b.value === dropped) b.checked = false; });
+        }
+      } else {
+        selected = selected.filter(function (v) { return v !== box.value; });
+      }
+      if (selected.length === 2) {
+        countEl.textContent = '2 Selected';
+        link.href = '{{ url_for("main.compare") }}?a=' + selected[0] + '&b=' + selected[1];
+        bar.style.display = 'flex';
+      } else {
+        bar.style.display = 'none';
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

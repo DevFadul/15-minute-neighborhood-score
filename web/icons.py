@@ -36,13 +36,31 @@ CATEGORY_ICONS = {
     </svg>"""),
 }
 
-CATEGORY_ACCENTS = {
-    "grocery": "amber",
-    "healthcare": "rose",
-    "education": "indigo",
-    "transit": "sky",
-    "parks": "emerald",
-    "retail": "violet",
+CATEGORY_COLORS = {
+    "grocery": "#b5791f",
+    "healthcare": "#8a2a2a",
+    "education": "#3c4f7a",
+    "transit": "#1f5c52",
+    "parks": "#4d6b3a",
+    "retail": "#6b4a7a",
+}
+
+CATEGORY_LETTERS = {
+    "grocery": "G",
+    "healthcare": "H",
+    "education": "E",
+    "transit": "T",
+    "parks": "P",
+    "retail": "R",
+}
+
+CATEGORY_SHORT = {
+    "grocery": "Grocery",
+    "healthcare": "Healthcare",
+    "education": "Education",
+    "transit": "Transit",
+    "parks": "Parks",
+    "retail": "Retail",
 }
 
 ICON_HOME = Markup(f"""<svg {_ATTRS}>

@@ -12,12 +12,16 @@ class Assessment:
     edit.
     """
 
-    def __init__(self, assessment_id, nickname, location_note, category_times, created_at=None):
+    def __init__(self, assessment_id, nickname, location_note, category_times, created_at=None, auto=False):
         self.assessment_id = assessment_id
         self.nickname = nickname
         self.location_note = location_note
         self.category_times = category_times
         self.created_at = created_at if created_at else datetime.now().isoformat(timespec="seconds")
+        # True when walk times came from an automatic address estimate rather
+        # than a person's own measurements -- surfaced as a "refine this" hint
+        # in the web UI. Console-created assessments are always False.
+        self.auto = auto
 
     def to_dict(self):
         """Serialize this assessment into a JSON-safe dictionary."""
@@ -27,6 +31,7 @@ class Assessment:
             "location_note": self.location_note,
             "created_at": self.created_at,
             "category_times": dict(self.category_times),
+            "auto": self.auto,
         }
 
     @staticmethod
@@ -38,6 +43,7 @@ class Assessment:
             location_note=data.get("location_note", ""),
             category_times=dict(data["category_times"]),
             created_at=data.get("created_at"),
+            auto=data.get("auto", False),
         )
 
     def get_time(self, category_key):

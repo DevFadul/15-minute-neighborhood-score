@@ -1,98 +1,105 @@
 {% extends "base.html" %}
+{% from "_map_sketch.html" import detail_sketch, radar_grid, axis_letters, score_ring %}
 {% block title %}{{ assessment.nickname }} — Score Breakdown{% endblock %}
 
-{% block extra_head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-{% endblock %}
-
 {% block content %}
-<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:16px;">
   <div>
-    <h1 class="text-2xl font-bold text-slate-900">{{ assessment.nickname }}</h1>
+    <a href="{{ url_for('main.dashboard') }}" class="btn-plain" style="display:block;margin-bottom:10px;">&lsaquo; All Assessments</a>
+    <h1 style="font-family:'Source Serif 4',serif;font-size:28px;font-weight:700;margin:0;color:var(--ink);">{{ assessment.nickname }}</h1>
     {% if assessment.location_note %}
-      <p class="text-sm text-slate-500">{{ assessment.location_note }}</p>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:0.04em;text-transform:uppercase;color:var(--ink2);margin-top:6px;">{{ assessment.location_note }}</div>
     {% endif %}
   </div>
-  <div class="flex gap-2">
-    <a href="{{ url_for('main.edit_assessment', assessment_id=assessment.assessment_id) }}"
-       class="btn-secondary">Edit</a>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    {% if others %}
+      <form method="get" action="{{ url_for('main.compare') }}" style="display:inline;">
+        <input type="hidden" name="a" value="{{ assessment.assessment_id }}">
+        <select name="b" onchange="this.form.submit()" class="field-input" style="width:auto;cursor:pointer;">
+          <option value="">Compare with&hellip;</option>
+          {% for o in others %}
+            <option value="{{ o.assessment_id }}">{{ o.nickname }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    {% endif %}
+    <a href="{{ url_for('main.walk', assessment_id=assessment.assessment_id) }}" class="btn btn-brand">Walk This Neighborhood</a>
+    <a href="{{ url_for('main.edit_assessment', assessment_id=assessment.assessment_id) }}" class="btn">Edit</a>
     <form method="post" action="{{ url_for('main.delete_assessment', assessment_id=assessment.assessment_id) }}"
-          onsubmit="return confirm('Delete this assessment?');">
-      <button type="submit" class="px-5 py-2.5 rounded-lg border border-rose-300 text-rose-600 hover:bg-rose-50 font-medium transition">
-        Delete
-      </button>
+          onsubmit="return confirm('Delete this assessment?');" style="display:inline;">
+      <button type="submit" class="btn btn-poor">Delete</button>
     </form>
   </div>
 </div>
 
-<div class="grid gap-6 lg:grid-cols-3 mb-6">
-  <div class="card p-6 flex flex-col items-center justify-center">
-    <div class="score-gauge" style="--score: {{ score }}; --gauge-color: {{ gauge_color }};">
-      <span class="text-3xl font-bold text-slate-900">{{ score }}</span>
+{% if assessment.auto %}
+  <div style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:12px 16px;margin-bottom:20px;font-family:'Public Sans',sans-serif;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+    <span>Estimated automatically from nearby real places. Refine with your own walk times for a more accurate score.</span>
+    <a href="{{ url_for('main.edit_assessment', assessment_id=assessment.assessment_id) }}"
+       style="background:#92400e;color:white;border:none;padding:7px 14px;font-size:12px;font-weight:600;flex-shrink:0;">Refine Estimates</a>
+  </div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:28px;">
+  <div style="background:var(--paper2);border:1px solid var(--line);overflow:hidden;position:relative;height:280px;">
+    {{ detail_sketch(sketch_blocks, sketch_pins, park_cluster, transit_ticks) }}
+    <div style="position:absolute;bottom:12px;left:14px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink2);background:rgba(255,255,255,0.85);padding:4px 8px;">Illustrative sketch &mdash; not to scale</div>
+  </div>
+  <div style="display:grid;grid-template-rows:auto 1fr;gap:20px;">
+    <div style="background:var(--paper2);border:1px solid var(--line);padding:22px;display:flex;align-items:center;gap:20px;">
+      {{ score_ring(ring_style, score, 'ring-110') }}
+      <div>
+        <div class="rating-label" style="font-size:14px;color:{{ rating_var }};margin-bottom:6px;">{{ rating }}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2);">SCORE {{ score }} / 100</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2);">WEIGHTED ACROSS SIX CATEGORIES</div>
+      </div>
     </div>
-    <span class="badge mt-3 bg-{{ color }}-100 text-{{ color }}-700">{{ rating }}</span>
-  </div>
-  <div class="lg:col-span-2 card p-6">
-    <canvas id="radarChart" height="220"></canvas>
-  </div>
-</div>
-
-<div class="card overflow-hidden mb-6">
-  <table class="w-full text-sm">
-    <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
-      <tr>
-        <th class="text-left px-4 py-3">Category</th>
-        <th class="text-right px-4 py-3">Minutes</th>
-        <th class="text-right px-4 py-3">Tier</th>
-        <th class="text-right px-4 py-3">Points</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-slate-100">
-      {% for row in breakdown %}
-      <tr>
-        <td class="px-4 py-3">
-          <div class="flex items-center gap-2.5">
-            <span class="w-7 h-7 rounded-md bg-{{ category_accents[row.key] }}-100 text-{{ category_accents[row.key] }}-600 p-1.5 shrink-0">
-              {{ category_icons[row.key] }}
-            </span>
-            {{ row.label }}
+    <div style="background:var(--paper2);border:1px solid var(--line);padding:20px;">
+      <div class="section-label" style="margin-bottom:8px;">Score Breakdown by Category</div>
+      <svg viewBox="-15 -8 310 300" style="width:100%;height:auto;display:block;">
+        {{ radar_grid() }}
+        <polygon points="{{ radar_points }}" fill="{{ rating_var }}" fill-opacity="0.25" stroke="{{ rating_var }}" stroke-width="2"></polygon>
+        {% for v in radar_vertices %}
+          <circle cx="{{ v.x }}" cy="{{ v.y }}" r="3.5" fill="{{ v.color }}" stroke="var(--paper2)" stroke-width="1.2"></circle>
+        {% endfor %}
+        {{ axis_letters(axis_labels) }}
+      </svg>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);">
+        {% for b in breakdown %}
+          <div style="display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink2);">
+            <span style="width:8px;height:8px;background:{{ b.color }};display:inline-block;"></span>
+            <span style="text-transform:uppercase;letter-spacing:0.03em;">{{ b.label.split(' /')[0].split(' &')[0] }}</span>
+            <span style="color:var(--ink);font-weight:700;">{{ b.points }}/{{ b.weight }}</span>
           </div>
-        </td>
-        <td class="px-4 py-3 text-right">{{ row.minutes }}</td>
-        <td class="px-4 py-3 text-right">{{ row.tier_percent | round(0) | int }}%</td>
-        <td class="px-4 py-3 text-right font-medium">{{ row.points }} / {{ row.weight }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="card p-6">
-  <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Recommendations</h2>
-  <ul class="space-y-2 text-sm text-slate-700 list-disc list-inside">
-    {% for tip in tips %}
-      <li>{{ tip }}</li>
-    {% endfor %}
-  </ul>
+<div style="background:var(--paper2);border:1px solid var(--line);padding:22px;margin-bottom:28px;">
+  <div class="section-label">Category Breakdown</div>
+  {% for b in breakdown %}
+    <div style="display:grid;grid-template-columns:28px 1fr 1fr 90px;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--line);">
+      <span class="badge-letter" style="width:24px;height:24px;background:{{ b.color }};font-size:11px;">{{ b.letter }}</span>
+      <span style="font-family:'Public Sans',sans-serif;font-size:13px;color:var(--ink);">{{ b.label }}</span>
+      <div style="height:8px;background:var(--line);position:relative;overflow:hidden;">
+        <div style="height:100%;background:{{ b.color }};width:{{ b.pct }}%;"></div>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2);text-align:right;">{{ b.minutes }} MIN &middot; {{ b.points }}/{{ b.weight }}</span>
+    </div>
+  {% endfor %}
 </div>
 
-<script>
-  new Chart(document.getElementById('radarChart'), {
-    type: 'radar',
-    data: {
-      labels: {{ chart_labels | tojson }},
-      datasets: [{
-        label: 'Points earned',
-        data: {{ chart_points | tojson }},
-        backgroundColor: 'rgba(61, 92, 62, 0.18)',
-        borderColor: '{{ gauge_color }}',
-        pointBackgroundColor: '{{ gauge_color }}',
-      }],
-    },
-    options: {
-      scales: { r: { beginAtZero: true, suggestedMax: 20 } },
-      plugins: { legend: { display: false } },
-    },
-  });
-</script>
+<div style="background:var(--paper2);border:1px solid var(--line);padding:22px;">
+  <div class="section-label">Recommendations</div>
+  {% for r in recommendations %}
+    <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px;">
+      {% if r.has_letter %}
+        <span class="badge-letter" style="width:24px;height:24px;background:{{ r.color }};font-size:11px;margin-top:1px;">{{ r.letter }}</span>
+      {% endif %}
+      <div style="font-family:'Public Sans',sans-serif;font-size:14px;color:var(--ink2);line-height:1.5;">{{ r.text }}</div>
+    </div>
+  {% endfor %}
+</div>
 {% endblock %}

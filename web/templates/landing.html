@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}15-Minute Neighborhood Score{% endblock %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='globe-stage.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+<div style="position:relative;height:100vh;min-height:560px;background:#11201a;overflow:hidden;">
+  <globe-stage style="position:absolute;inset:0;"></globe-stage>
+  <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 48%, rgba(17,32,26,0) 42%, rgba(9,18,14,0.42) 74%, rgba(9,18,14,0.85) 100%);"></div>
+  <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 560px 250px at 50% 52%, rgba(9,18,14,0.62), rgba(9,18,14,0.18) 62%, rgba(9,18,14,0) 80%);"></div>
+
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column;padding:30px 44px 36px;pointer-events:none;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <svg width="28" height="28" viewBox="0 0 24 24">
+          <path d="M12 21s7-7.58 7-12A7 7 0 0 0 5 9c0 4.42 7 12 7 12z" fill="#d1552f"></path>
+          <circle cx="12" cy="9" r="2.6" fill="#11201a"></circle>
+        </svg>
+        <div>
+          <div style="font-family:'Source Serif 4',serif;font-weight:700;font-size:16px;color:#f0e9d8;">15-Minute Neighborhood Score</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#7fa38c;">SDG 11 &middot; Sustainable Cities &amp; Communities</div>
+        </div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#7fa38c;border:1px solid #2c4a3a;padding:7px 11px;">Drag to spin the globe</div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:auto;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#d1552f;margin-bottom:14px;">Walkability, measured</div>
+      <h1 style="font-family:'Source Serif 4',serif;font-size:clamp(30px,4vw,50px);font-weight:700;line-height:1.06;margin:0 0 14px;color:#f4eeda;max-width:740px;">Can you reach daily life in fifteen minutes?</h1>
+      <p style="font-family:'Public Sans',sans-serif;font-size:15px;line-height:1.6;color:#a9bfae;margin:0 0 26px;max-width:520px;">Groceries, healthcare, schools, transit, parks, retail. Enter a real address and this scores it from real nearby places -- no fake numbers.</p>
+
+      <form id="estimate-form" style="display:flex;border:1px solid #d1552f;width:100%;max-width:560px;">
+        <input id="estimate-query" type="text" name="query" autocomplete="off"
+               placeholder="e.g. 224 W 35th St, New York, or Kuala Lumpur City Centre"
+               style="flex:1;min-width:0;border:none;padding:15px 16px;font-family:'Public Sans',sans-serif;font-size:14px;color:#11201a;background:#f4eeda;" />
+        <button id="estimate-submit" type="submit"
+                style="background:#d1552f;color:#11201a;border:none;padding:15px 24px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;white-space:nowrap;">Score This Location</button>
+      </form>
+      <div id="estimate-error" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#e2a68f;margin-top:12px;min-height:16px;"></div>
+
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7fa38c;margin-top:14px;">
+        Prefer exact numbers?
+        <a href="{{ url_for('main.new_assessment') }}" style="text-decoration:underline;color:#d1552f;">Enter walk times manually</a>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:center;gap:28px;flex-wrap:wrap;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#6f9280;">
+      <span>Six weighted categories</span>
+      <span>Scored 0&ndash;100</span>
+      <a href="{{ url_for('main.about') }}" style="color:#7fa38c;text-decoration:underline;">Open methodology</a>
+      <a href="{{ url_for('main.dashboard') }}" style="color:#7fa38c;text-decoration:underline;">Saved assessments</a>
+    </div>
+  </div>
+
+  <div id="veil" style="position:absolute;inset:0;background:#f0e9d8;pointer-events:none;opacity:0;transition:opacity 1.7s cubic-bezier(.6,0,.9,.5);"></div>
+</div>
+
+<script>
+(function () {
+  var form = document.getElementById('estimate-form');
+  var input = document.getElementById('estimate-query');
+  var button = document.getElementById('estimate-submit');
+  var errorEl = document.getElementById('estimate-error');
+  var veil = document.getElementById('veil');
+  var busy = false;
+
+  function setBusy(isBusy, label) {
+    busy = isBusy;
+    input.disabled = isBusy;
+    button.disabled = isBusy;
+    button.textContent = label;
+  }
+
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (busy) return;
+    var query = input.value.trim();
+    if (!query) return;
+
+    errorEl.textContent = '';
+    setBusy(true, 'Analyzing…');
+
+    fetch('{{ url_for("main.estimate") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'query=' + encodeURIComponent(query),
+    })
+      .then(function (response) { return response.json(); })
+      .then(function (data) {
+        if (data.error) {
+          errorEl.textContent = data.error;
+          setBusy(false, 'Score This Location');
+          return;
+        }
+        setBusy(true, 'Zooming in…');
+        var globe = document.querySelector('globe-stage');
+        var navigate = function () {
+          veil.style.opacity = '1';
+          setTimeout(function () { window.location.href = data.redirect; }, 300);
+        };
+        if (globe && typeof globe.zoomIn === 'function') {
+          document.addEventListener('nhs-globe-entered', navigate, { once: true });
+          globe.zoomIn();
+        } else {
+          navigate();
+        }
+      })
+      .catch(function () {
+        errorEl.textContent = 'Something went wrong reaching the location service. Try again.';
+        setBusy(false, 'Score This Location');
+      });
+  });
+})();
+</script>
+{% endblock %}

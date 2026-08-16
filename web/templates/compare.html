@@ -1,90 +1,85 @@
 {% extends "base.html" %}
+{% from "_map_sketch.html" import radar_grid, axis_letters %}
 {% block title %}Compare Assessments{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold text-slate-900 mb-6">Compare Assessments</h1>
+<a href="{{ url_for('main.dashboard') }}" class="btn-plain" style="display:block;margin-bottom:20px;">&lsaquo; All Assessments</a>
 
-<form method="get" class="card p-6 mb-6 flex flex-wrap items-end gap-4">
+<form method="get" class="panel" style="padding:22px;margin-bottom:24px;display:flex;flex-wrap:wrap;align-items:end;gap:16px;">
   <div>
-    <label class="block text-sm font-medium text-slate-700 mb-1">Option A</label>
-    <select name="a" class="input-field">
-      <option value="">Select...</option>
+    <label class="field-label">Option A</label>
+    <select name="a" class="field-input">
+      <option value="">Select&hellip;</option>
       {% for a in assessments %}
-        <option value="{{ a.assessment_id }}" {{ 'selected' if id_a == a.assessment_id }}>
-          {{ a.nickname }} (ID {{ a.assessment_id }})
-        </option>
+        <option value="{{ a.assessment_id }}" {{ 'selected' if id_a == a.assessment_id }}>{{ a.nickname }} (ID {{ a.assessment_id }})</option>
       {% endfor %}
     </select>
   </div>
   <div>
-    <label class="block text-sm font-medium text-slate-700 mb-1">Option B</label>
-    <select name="b" class="input-field">
-      <option value="">Select...</option>
+    <label class="field-label">Option B</label>
+    <select name="b" class="field-input">
+      <option value="">Select&hellip;</option>
       {% for a in assessments %}
-        <option value="{{ a.assessment_id }}" {{ 'selected' if id_b == a.assessment_id }}>
-          {{ a.nickname }} (ID {{ a.assessment_id }})
-        </option>
+        <option value="{{ a.assessment_id }}" {{ 'selected' if id_b == a.assessment_id }}>{{ a.nickname }} (ID {{ a.assessment_id }})</option>
       {% endfor %}
     </select>
   </div>
-  <button type="submit" class="btn-primary">Compare</button>
+  <button type="submit" class="btn btn-accent">Compare</button>
 </form>
 
 {% if result %}
-  <div class="card overflow-hidden">
-    <div class="grid grid-cols-2 divide-x divide-slate-100 text-center py-4 bg-slate-50">
-      <div>
-        <p class="font-semibold text-slate-900">{{ result.a.nickname }}</p>
-        <span class="badge bg-{{ colors[result.rating_a] }}-100 text-{{ colors[result.rating_a] }}-700">
-          {{ result.rating_a }}
-        </span>
-      </div>
-      <div>
-        <p class="font-semibold text-slate-900">{{ result.b.nickname }}</p>
-        <span class="badge bg-{{ colors[result.rating_b] }}-100 text-{{ colors[result.rating_b] }}-700">
-          {{ result.rating_b }}
-        </span>
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:24px;align-items:center;margin-bottom:28px;">
+    <div style="text-align:right;">
+      <div style="font-family:'Source Serif 4',serif;font-size:20px;font-weight:700;color:var(--ink);">{{ result.a.nickname }}</div>
+      {% if result.a.location_note %}
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2);text-transform:uppercase;margin:4px 0 12px;">{{ result.a.location_note }}</div>
+      {% endif %}
+      <div style="display:inline-flex;align-items:center;gap:12px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:26px;color:var(--accent);">{{ result.score_a }}</span>
+        <span class="rating-label" style="font-size:11px;color:{{ result.rating_a_var }};">{{ result.rating_a }}</span>
       </div>
     </div>
-    <table class="w-full text-sm">
-      <thead class="text-slate-500 text-xs uppercase tracking-wide">
-        <tr>
-          <th class="text-left px-4 py-3">Category</th>
-          <th class="text-right px-4 py-3">{{ result.a.nickname }}</th>
-          <th class="text-right px-4 py-3">{{ result.b.nickname }}</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-100">
-        {% for row in result.rows %}
-        <tr>
-          <td class="px-4 py-3">
-            <div class="flex items-center gap-2.5">
-              <span class="w-6 h-6 rounded-md bg-{{ category_accents[row.key] }}-100 text-{{ category_accents[row.key] }}-600 p-1 shrink-0">
-                {{ category_icons[row.key] }}
-              </span>
-              {{ row.label }}
-            </div>
-          </td>
-          <td class="px-4 py-3 text-right {{ 'text-forest-600 font-semibold' if row.a_wins }}">{{ row.points_a }}</td>
-          <td class="px-4 py-3 text-right {{ 'text-forest-600 font-semibold' if row.b_wins }}">{{ row.points_b }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr class="border-t border-slate-200 font-semibold">
-          <td class="px-4 py-3">Total Score</td>
-          <td class="px-4 py-3 text-right">{{ result.score_a }}</td>
-          <td class="px-4 py-3 text-right">{{ result.score_b }}</td>
-        </tr>
-      </tfoot>
-    </table>
-    <div class="px-4 py-4 bg-slate-50 text-sm text-slate-700">
-      {% if result.winner %}
-        Verdict: <strong>{{ result.winner.nickname }}</strong> is the more walkable 15-minute neighborhood.
-      {% else %}
-        Verdict: Both neighborhoods score equally.
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink2);border-left:1px solid var(--line);border-right:1px solid var(--line);padding:8px 16px;">VS</div>
+    <div style="text-align:left;">
+      <div style="font-family:'Source Serif 4',serif;font-size:20px;font-weight:700;color:var(--ink);">{{ result.b.nickname }}</div>
+      {% if result.b.location_note %}
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2);text-transform:uppercase;margin:4px 0 12px;">{{ result.b.location_note }}</div>
       {% endif %}
+      <div style="display:inline-flex;align-items:center;gap:12px;">
+        <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:26px;color:var(--accent-b);">{{ result.score_b }}</span>
+        <span class="rating-label" style="font-size:11px;color:{{ result.rating_b_var }};">{{ result.rating_b }}</span>
+      </div>
     </div>
   </div>
+
+  <div class="panel" style="padding:22px;margin-bottom:12px;display:flex;justify-content:center;">
+    <svg viewBox="-15 -8 310 300" style="width:100%;max-width:400px;height:auto;">
+      {{ radar_grid() }}
+      <polygon points="{{ result.radar_a }}" fill="var(--accent)" fill-opacity="0.18" stroke="var(--accent)" stroke-width="2"></polygon>
+      <polygon points="{{ result.radar_b }}" fill="var(--accent-b)" fill-opacity="0.18" stroke="var(--accent-b)" stroke-width="2"></polygon>
+      {{ axis_letters(axis_labels) }}
+    </svg>
+  </div>
+  <div style="display:flex;justify-content:center;gap:24px;margin-bottom:28px;font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink2);">
+    <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:var(--accent);display:inline-block;"></span>{{ result.a.nickname }}</span>
+    <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:var(--accent-b);display:inline-block;"></span>{{ result.b.nickname }}</span>
+  </div>
+
+  <div class="panel" style="padding:22px;margin-bottom:24px;">
+    <div style="display:grid;grid-template-columns:28px 1fr 1fr 1fr 70px;gap:14px;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink2);padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:6px;">
+      <span></span><span>Category</span><span>{{ result.a.nickname }}</span><span>{{ result.b.nickname }}</span><span>Min</span>
+    </div>
+    {% for row in result.rows %}
+      <div style="display:grid;grid-template-columns:28px 1fr 1fr 1fr 70px;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--line);">
+        <span class="badge-letter" style="width:22px;height:22px;background:{{ row.color }};font-size:10px;">{{ row.letter }}</span>
+        <span style="font-family:'Public Sans',sans-serif;font-size:13px;color:var(--ink);">{{ row.label }}</span>
+        <div style="height:7px;background:var(--line);overflow:hidden;"><div style="height:100%;background:var(--accent);width:{{ row.a_pct }}%;"></div></div>
+        <div style="height:7px;background:var(--line);overflow:hidden;"><div style="height:100%;background:var(--accent-b);width:{{ row.b_pct }}%;"></div></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2);text-align:right;">{{ row.a_minutes }}/{{ row.b_minutes }}</span>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="panel" style="padding:22px;font-family:'Public Sans',sans-serif;font-size:15px;color:var(--ink);line-height:1.55;">{{ result.verdict }}</div>
 {% endif %}
 {% endblock %}

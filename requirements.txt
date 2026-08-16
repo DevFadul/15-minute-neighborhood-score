@@ -1,5 +1,7 @@
 # The console app (main.py) has no external dependencies -- Python 3
 # standard library only (json, datetime, os -- all built in).
 #
-# The optional web UI (run_web.py) needs Flask:
+# The optional web UI (run_web.py) needs Flask, plus gunicorn as the
+# production WSGI server (Flask's own dev server isn't for deployment):
 flask
+gunicorn

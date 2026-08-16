@@ -2,7 +2,7 @@
 
 from flask import Flask
 
-from web.icons import CATEGORY_ACCENTS, CATEGORY_ICONS, ICON_HOME, ICON_PIN
+from web.icons import CATEGORY_COLORS, CATEGORY_ICONS, CATEGORY_LETTERS, CATEGORY_SHORT, ICON_HOME, ICON_PIN
 
 
 def create_app():
@@ -11,7 +11,9 @@ def create_app():
     app.secret_key = "dev-only-secret-key-not-for-production"
 
     app.jinja_env.globals["category_icons"] = CATEGORY_ICONS
-    app.jinja_env.globals["category_accents"] = CATEGORY_ACCENTS
+    app.jinja_env.globals["category_colors"] = CATEGORY_COLORS
+    app.jinja_env.globals["category_letters"] = CATEGORY_LETTERS
+    app.jinja_env.globals["category_short"] = CATEGORY_SHORT
     app.jinja_env.globals["icon_home"] = ICON_HOME
     app.jinja_env.globals["icon_pin"] = ICON_PIN
 

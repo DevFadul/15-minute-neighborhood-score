@@ -2,92 +2,88 @@
 {% block title %}About — SDG 11 & Methodology{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold text-slate-900 mb-6">About SDG 11 & Methodology</h1>
+<h1 style="font-family:'Source Serif 4',serif;font-size:26px;font-weight:700;margin:0 0 24px;color:var(--ink);">About SDG 11 & Methodology</h1>
 
-<div class="card p-6 mb-6 text-sm text-slate-700 leading-relaxed">
-  <p>
+<div class="panel" style="padding:22px;margin-bottom:24px;font-family:'Public Sans',sans-serif;font-size:14px;color:var(--ink2);line-height:1.6;">
+  <p style="margin:0;">
     SDG 11 (Sustainable Cities and Communities) calls for inclusive, safe, resilient, and
     sustainable urban areas with access to green space and affordable, accessible transport.
     The "15-minute city" concept holds that residents should be able to reach daily essentials
     within a 15-minute walk, reducing car dependency and emissions. This tool scores a
-    neighborhood from 0–100 across 6 weighted categories.
+    neighborhood from 0&ndash;100 across 6 weighted categories.
+  </p>
+  <p style="margin:14px 0 0;">
+    Manually entered assessments use your own measured or estimated walk times. Assessments
+    created from the landing page's search box use real nearby places (via OpenStreetMap) and a
+    straight-line distance &times; a 1.3 detour factor at 80 m/min walking pace &mdash; a reasonable
+    approximation, not a routed walking distance from a mapping API, so refine them with your own
+    numbers for a more accurate score.
   </p>
 </div>
 
-<div class="card p-6 mb-6">
-  <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-1 text-center">
-    The 15-Minute Walk Zone
-  </h2>
-  <p class="text-xs text-slate-400 text-center mb-2">Illustrative -- actual scoring uses each category's own tier table.</p>
-  <svg viewBox="0 0 400 390" class="w-full max-w-md mx-auto">
-    <circle cx="200" cy="195" r="155" fill="none" stroke="#3d5c3e" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.25"/>
-    <circle cx="200" cy="195" r="105" fill="none" stroke="#3d5c3e" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.4"/>
-    <circle cx="200" cy="195" r="55" fill="none" stroke="#3d5c3e" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.6"/>
+<div class="panel" style="padding:22px;margin-bottom:24px;">
+  <div class="section-label" style="text-align:center;margin-bottom:2px;">The 15-Minute Walk Zone</div>
+  <p style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2);margin:0 0 8px;">Illustrative &mdash; actual scoring uses each category's own tier table.</p>
+  <svg viewBox="0 0 400 390" style="width:100%;max-width:420px;display:block;margin:0 auto;">
+    <circle cx="200" cy="195" r="155" fill="none" stroke="var(--brand)" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.25"/>
+    <circle cx="200" cy="195" r="105" fill="none" stroke="var(--brand)" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.4"/>
+    <circle cx="200" cy="195" r="55" fill="none" stroke="var(--brand)" stroke-width="1.5" stroke-dasharray="3 6" opacity="0.6"/>
 
     {% set markers = [
       ("grocery", 295, 195), ("healthcare", 248, 113), ("education", 153, 113),
       ("transit", 105, 195), ("parks", 153, 277), ("retail", 248, 277)
     ] %}
     {% for key, x, y in markers %}
-      <line x1="200" y1="195" x2="{{ x }}" y2="{{ y }}" stroke="#cbd5e1" stroke-width="1"/>
+      <line x1="200" y1="195" x2="{{ x }}" y2="{{ y }}" stroke="var(--line)" stroke-width="1"/>
     {% endfor %}
 
-    <circle cx="200" cy="195" r="26" fill="#f0f4f0" stroke="#3d5c3e" stroke-width="2"/>
-    <svg x="188" y="183" width="24" height="24" class="text-forest-700">{{ icon_home }}</svg>
-    <text x="200" y="234" text-anchor="middle" class="fill-slate-500" font-size="11">You</text>
+    <circle cx="200" cy="195" r="26" fill="var(--paper2)" stroke="var(--brand)" stroke-width="2"/>
+    <svg x="188" y="183" width="24" height="24" style="color:var(--brand);">{{ icon_home }}</svg>
+    <text x="200" y="234" text-anchor="middle" fill="var(--ink2)" font-family="'IBM Plex Mono',monospace" font-size="11">You</text>
 
     {% for key, x, y in markers %}
-      <circle cx="{{ x }}" cy="{{ y }}" r="21" fill="white" stroke="currentColor"
-              class="text-{{ category_accents[key] }}-400"/>
-      <svg x="{{ x - 11 }}" y="{{ y - 11 }}" width="22" height="22" class="text-{{ category_accents[key] }}-600">
-        {{ category_icons[key] }}
-      </svg>
-      <text x="{{ x }}" y="{{ y + 34 }}" text-anchor="middle" class="fill-slate-500" font-size="11">
-        {{ categories[key].label.split(' /')[0].split(' &')[0] }}
+      <circle cx="{{ x }}" cy="{{ y }}" r="21" fill="var(--paper2)" stroke="{{ category_colors[key] }}" stroke-width="2"/>
+      <svg x="{{ x - 11 }}" y="{{ y - 11 }}" width="22" height="22" style="color:{{ category_colors[key] }};">{{ category_icons[key] }}</svg>
+      <text x="{{ x }}" y="{{ y + 34 }}" text-anchor="middle" fill="var(--ink2)" font-family="'IBM Plex Mono',monospace" font-size="11">
+        {{ category_short[key] }}
       </text>
     {% endfor %}
   </svg>
-  <div class="flex items-center justify-center gap-4 text-xs text-slate-400 mt-2">
-    <span class="flex items-center gap-1"><span class="w-3 border-t-2 border-dashed border-forest-600 opacity-60"></span> 5 min</span>
-    <span class="flex items-center gap-1"><span class="w-3 border-t-2 border-dashed border-forest-600 opacity-40"></span> 10 min</span>
-    <span class="flex items-center gap-1"><span class="w-3 border-t-2 border-dashed border-forest-600 opacity-25"></span> 15 min</span>
+  <div style="display:flex;align-items:center;justify-content:center;gap:16px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2);margin-top:6px;">
+    <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;border-top:2px dashed var(--brand);opacity:0.6;"></span>5 min</span>
+    <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;border-top:2px dashed var(--brand);opacity:0.4;"></span>10 min</span>
+    <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;border-top:2px dashed var(--brand);opacity:0.25;"></span>15 min</span>
   </div>
 </div>
 
-<div class="grid gap-6 lg:grid-cols-2">
-  <div class="card p-6">
-    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Category Weights</h2>
-    <ul class="space-y-3 text-sm">
-      {% for key, info in categories.items() %}
-        <li class="flex items-center justify-between">
-          <span class="flex items-center gap-2.5">
-            <span class="w-6 h-6 rounded-md bg-{{ category_accents[key] }}-100 text-{{ category_accents[key] }}-600 p-1 shrink-0">
-              {{ category_icons[key] }}
-            </span>
-            {{ info.label }}
-          </span>
-          <span class="font-semibold">{{ info.weight }}</span>
-        </li>
-      {% endfor %}
-    </ul>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+  <div class="panel" style="padding:22px;">
+    <div class="section-label">Category Weights</div>
+    {% for key, info in categories.items() %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;{{ 'border-bottom:1px solid var(--line);' if not loop.last }}">
+        <span style="display:flex;align-items:center;gap:10px;font-family:'Public Sans',sans-serif;font-size:13px;color:var(--ink);">
+          <span class="badge-letter" style="width:22px;height:22px;background:{{ category_colors[key] }};font-size:10px;">{{ category_letters[key] }}</span>
+          {{ info.label }}
+        </span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--ink);">{{ info.weight }}%</span>
+      </div>
+    {% endfor %}
   </div>
 
-  <div class="card p-6">
-    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Walking-Time Tiers</h2>
-    <ul class="space-y-2 text-sm">
-      {% for tier in tiers %}
-        <li class="flex justify-between">
-          <span>{{ tier.label }}</span><span class="font-semibold">{{ tier.percent | int }}%</span>
-        </li>
-      {% endfor %}
-    </ul>
+  <div class="panel" style="padding:22px;">
+    <div class="section-label">Walking-Time Tiers</div>
+    {% for tier in tiers %}
+      <div style="display:flex;justify-content:space-between;padding:8px 0;font-family:'Public Sans',sans-serif;font-size:13px;color:var(--ink);{{ 'border-bottom:1px solid var(--line);' if not loop.last }}">
+        <span>{{ tier.label }}</span><span style="font-family:'IBM Plex Mono',monospace;font-weight:700;">{{ tier.percent | int }}%</span>
+      </div>
+    {% endfor %}
   </div>
 
-  <div class="card p-6 lg:col-span-2">
-    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Rating Bands</h2>
-    <div class="flex gap-3 flex-wrap">
+  <div class="panel" style="padding:22px;grid-column:1 / -1;">
+    <div class="section-label">Rating Bands</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
       {% for threshold, label in rating_bands %}
-        <span class="badge bg-{{ colors[label] }}-100 text-{{ colors[label] }}-700">
+        <span class="rating-label" style="font-size:11px;border:1px solid {{ rating_color_var[label] }};color:{{ rating_color_var[label] }};padding:6px 12px;border-radius:999px;">
           {{ label }} ({{ threshold }}+)
         </span>
       {% endfor %}

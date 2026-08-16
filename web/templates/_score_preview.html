@@ -1,8 +1,17 @@
+{% from "_map_sketch.html" import radar_grid, axis_letters, score_ring %}
 {% if ready is defined and ready %}
-  <div class="text-4xl font-bold text-{{ color }}-600">
-    {{ score }}<span class="text-base text-slate-400 font-normal"> / 100</span>
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+    {{ score_ring(ring_style, score, 'ring-88') }}
+    <div>
+      <div class="rating-label" style="font-size:13px;color:{{ rating_var }};">{{ rating }}</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2);margin-top:4px;">{{ score }} / 100</div>
+    </div>
   </div>
-  <span class="badge inline-block mt-2 bg-{{ color }}-100 text-{{ color }}-700">{{ rating }}</span>
+  <svg viewBox="0 0 280 280" style="width:100%;height:auto;">
+    {{ radar_grid() }}
+    <polygon points="{{ radar_points }}" fill="{{ rating_var }}" fill-opacity="0.25" stroke="{{ rating_var }}" stroke-width="2"></polygon>
+    {{ axis_letters(axis_labels) }}
+  </svg>
 {% else %}
-  <p class="text-sm text-slate-400">Fill in all six categories to see a live score.</p>
+  <p style="font-family:'Public Sans',sans-serif;font-size:13px;color:var(--ink2);">Fill in all six categories to see a live score.</p>
 {% endif %}

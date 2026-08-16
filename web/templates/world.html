@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "_map_sketch.html" import score_ring %}
+{% block title %}{{ assessment.nickname }} — Walkthrough{% endblock %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='world-stage.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+<div style="position:relative;height:100vh;min-height:420px;background:#dcd2b4;overflow:hidden;">
+  <world-stage
+    data="{{ facilities|tojson }}"
+    locname="{{ assessment.nickname }}"
+    style="position:absolute;inset:0;"></world-stage>
+
+  <div style="position:absolute;top:22px;left:24px;background:var(--paper2);border:1px solid var(--ink);padding:16px 20px;display:flex;align-items:center;gap:18px;">
+    {{ score_ring(ring_style, score, 'ring-64') }}
+    <div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink2);">You are standing at</div>
+      <div style="font-family:'Source Serif 4',serif;font-size:19px;font-weight:700;color:var(--ink);">{{ assessment.nickname }}</div>
+      <div class="rating-label" style="font-size:11px;color:{{ rating_var }};">{{ rating }} &middot; {{ score }}/100</div>
+    </div>
+  </div>
+
+  <div style="position:absolute;top:22px;right:24px;background:var(--paper2);border:1px solid var(--ink);padding:10px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.04em;text-transform:uppercase;color:var(--ink2);white-space:nowrap;">
+    W A S D or arrows to walk &middot; drag to look
+  </div>
+
+  <div style="position:absolute;left:0;right:0;bottom:0;background:var(--paper2);border-top:1px solid var(--ink);padding:11px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:nowrap;">
+    <div style="display:flex;align-items:center;gap:7px;flex:1;min-width:0;overflow-x:auto;">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--paper2);background:var(--ink);padding:5px 7px;flex-shrink:0;">Live</span>
+      {% for f in facilities %}
+        <div style="display:flex;align-items:center;gap:8px;border:1px solid var(--line);padding:6px 9px;flex-shrink:0;">
+          <span style="width:22px;height:22px;background:{{ f.color }};color:var(--paper2);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{ f.letter }}</span>
+          <span style="display:flex;flex-direction:column;line-height:1.3;">
+            <span style="font-family:'Public Sans',sans-serif;font-size:11px;color:var(--ink2);white-space:nowrap;">{{ f.short }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--ink);white-space:nowrap;">
+              <span data-nhs-dist="{{ f.id }}">{{ f.meters }} m</span> &middot; <span data-nhs-live="{{ f.id }}">{{ f.minutes }} min</span>
+            </span>
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+    <div style="display:flex;gap:12px;flex-shrink:0;">
+      <a href="{{ url_for('main.dashboard') }}" class="btn">&lsaquo; Dashboard</a>
+      <a href="{{ url_for('main.detail', assessment_id=assessment.assessment_id) }}" class="btn btn-accent">View Full Report &rarr;</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

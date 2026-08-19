@@ -1,6 +1,6 @@
-"""Server-side validation for web forms, mirroring the rules in neighborhood_score.validation."""
+"""Server-side validation for web forms, mirroring the rules in main.py's input helpers."""
 
-from neighborhood_score.constants import CATEGORIES, MAX_MINUTES
+from neighborhood_score import CATEGORIES, MAX_MINUTES
 
 
 def validate_nickname(raw_value):

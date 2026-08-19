@@ -4,7 +4,7 @@
 {% block content %}
 <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px;">
   <h1 style="font-family:'Source Serif 4',serif;font-size:26px;font-weight:700;margin:0;color:var(--ink);">Edit Assessment</h1>
-  <a href="{{ url_for('main.detail', assessment_id=assessment.assessment_id) }}" class="btn-plain">&lsaquo; Cancel</a>
+  <a href="{{ url_for('main.detail', assessment_id=assessment.id) }}" class="btn-plain">&lsaquo; Cancel</a>
 </div>
 
 <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:36px;align-items:start;">
@@ -41,7 +41,7 @@
 
     <div style="display:flex;gap:12px;margin-top:28px;">
       <button type="submit" class="btn btn-accent">Save Changes</button>
-      <a href="{{ url_for('main.detail', assessment_id=assessment.assessment_id) }}" class="btn">Cancel</a>
+      <a href="{{ url_for('main.detail', assessment_id=assessment.id) }}" class="btn">Cancel</a>
     </div>
   </form>
 

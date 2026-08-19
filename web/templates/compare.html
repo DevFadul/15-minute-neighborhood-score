@@ -11,7 +11,7 @@
     <select name="a" class="field-input">
       <option value="">Select&hellip;</option>
       {% for a in assessments %}
-        <option value="{{ a.assessment_id }}" {{ 'selected' if id_a == a.assessment_id }}>{{ a.nickname }} (ID {{ a.assessment_id }})</option>
+        <option value="{{ a.id }}" {{ 'selected' if id_a == a.id }}>{{ a.nickname }} (ID {{ a.id }})</option>
       {% endfor %}
     </select>
   </div>
@@ -20,7 +20,7 @@
     <select name="b" class="field-input">
       <option value="">Select&hellip;</option>
       {% for a in assessments %}
-        <option value="{{ a.assessment_id }}" {{ 'selected' if id_b == a.assessment_id }}>{{ a.nickname }} (ID {{ a.assessment_id }})</option>
+        <option value="{{ a.id }}" {{ 'selected' if id_b == a.id }}>{{ a.nickname }} (ID {{ a.id }})</option>
       {% endfor %}
     </select>
   </div>

@@ -1,7 +1,7 @@
 """View functions for the web UI.
 
-Every calculation and persistence call delegates to neighborhood_score.* --
-the same package the console app (main.py) uses -- so both interfaces stay
+Every calculation and persistence call delegates to neighborhood_score.py --
+the same module the console app (main.py) uses -- so both interfaces stay
 in sync against the same data/assessments.json and the same scoring rules.
 """
 
@@ -9,19 +9,14 @@ import math
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 
-from neighborhood_score import recommendations, storage
-from neighborhood_score.constants import CATEGORIES, MAX_MINUTES, RATING_BANDS, TIER_TABLE
-from neighborhood_score.models import Assessment
-from neighborhood_score.scoring import create_default_calculator
-from neighborhood_score.ui import round_half_up
-
+import neighborhood_score as ns
 from web import geocoding
 from web.forms import parse_category_times, validate_nickname
 from web.icons import CATEGORY_COLORS, CATEGORY_LETTERS, CATEGORY_SHORT
 
 bp = Blueprint("main", __name__)
 
-CATEGORY_KEYS = list(CATEGORIES.keys())
+CATEGORY_KEYS = list(ns.CATEGORIES.keys())
 
 RATING_COLOR_VAR = {
     "Excellent": "var(--excellent)",
@@ -50,19 +45,19 @@ def _ring_style(score, rating):
     )
 
 
-def _radar_points(category_times, calculator):
+def _radar_points(category_times):
     points = []
     for i, category_key in enumerate(CATEGORY_KEYS):
-        tier = calculator.get_tier_percentage(category_times.get(category_key, 0))
+        tier = ns.get_tier_percentage(category_times.get(category_key, 0))
         dx, dy = RADAR_AXES[i]
         points.append(f"{140 + dx * tier:.1f},{140 + dy * tier:.1f}")
     return " ".join(points)
 
 
-def _radar_vertices(category_times, calculator):
+def _radar_vertices(category_times):
     vertices = []
     for i, category_key in enumerate(CATEGORY_KEYS):
-        tier = calculator.get_tier_percentage(category_times.get(category_key, 0))
+        tier = ns.get_tier_percentage(category_times.get(category_key, 0))
         dx, dy = RADAR_AXES[i]
         vertices.append({
             "x": round(140 + dx * tier, 1),
@@ -129,11 +124,11 @@ def _build_sketch_blocks(seed_id, count=16):
     return blocks
 
 
-def _build_sketch_pins(category_times, calculator):
+def _build_sketch_pins(category_times):
     """Illustrative pin positions radiating from the map-sketch center -- closer means a better tier."""
     pins = []
     for i, category_key in enumerate(CATEGORY_KEYS):
-        tier = calculator.get_tier_percentage(category_times.get(category_key, 0))
+        tier = ns.get_tier_percentage(category_times.get(category_key, 0))
         angle = math.radians(RADAR_AXES_DEGREES[i])
         radius = 16 + (1 - tier) * 54
         pins.append({
@@ -174,12 +169,11 @@ def _build_transit_ticks(pins):
     return ticks
 
 
-def _breakdown_rows(assessment, calculator):
-    category_scores = calculator.calculate_all_category_scores(assessment)
+def _breakdown_rows(assessment):
     rows = []
-    for category_key, info in CATEGORIES.items():
-        minutes = assessment.get_time(category_key)
-        points = round_half_up(category_scores[category_key])
+    for category_key, info in ns.CATEGORIES.items():
+        minutes = assessment["category_times"][category_key]
+        points = ns.round_half_up(ns.calculate_category_score(category_key, minutes))
         rows.append({
             "key": category_key,
             "label": info["label"],
@@ -193,11 +187,11 @@ def _breakdown_rows(assessment, calculator):
     return rows
 
 
-def _build_recommendation_cards(assessment, calculator):
-    """Same selection logic as neighborhood_score.recommendations.generate_recommendations,
-    reusing its category-tip lookup, but shaped for the letter-badge UI instead of joined text."""
-    max_possible = sum(info["weight"] for info in CATEGORIES.values())
-    total_score = calculator.calculate_total_score(assessment)
+def _build_recommendation_cards(assessment):
+    """Same selection logic as neighborhood_score.generate_recommendations, reusing
+    its category-tip lookup, but shaped for the letter-badge UI instead of joined text."""
+    max_possible = sum(info["weight"] for info in ns.CATEGORIES.values())
+    total_score = ns.calculate_total_score(assessment)
 
     if total_score >= max_possible - 0.01:
         return [{
@@ -206,14 +200,14 @@ def _build_recommendation_cards(assessment, calculator):
             "has_letter": False,
         }]
 
-    ranked = calculator.rank_categories_ascending(assessment)
+    ranked = ns.rank_categories_ascending(assessment)
     cards = []
     for category_key, points_earned in ranked[:2]:
-        weight = CATEGORIES[category_key]["weight"]
+        weight = ns.CATEGORIES[category_key]["weight"]
         if points_earned >= weight * 0.75:
             continue
         cards.append({
-            "text": f"{CATEGORIES[category_key]['label']}: {recommendations.get_tip_for_category(category_key)}",
+            "text": f"{ns.CATEGORIES[category_key]['label']}: {ns.get_tip_for_category(category_key)}",
             "has_letter": True,
             "letter": CATEGORY_LETTERS[category_key],
             "color": CATEGORY_COLORS[category_key],
@@ -229,7 +223,7 @@ def _build_recommendation_cards(assessment, calculator):
 
 
 def _assessment_or_none(assessment_id):
-    assessment = storage.find_assessment_by_id(storage.load_all_assessments(), assessment_id)
+    assessment = ns.find_assessment_by_id(ns.load_all_assessments(), assessment_id)
     if assessment is None:
         flash(f"No assessment with ID {assessment_id}.", "error")
     return assessment
@@ -242,21 +236,20 @@ def landing():
 
 @bp.route("/dashboard")
 def dashboard():
-    calculator = create_default_calculator()
     cards = []
-    for assessment in storage.load_all_assessments():
-        total_score = calculator.calculate_total_score(assessment)
-        rating = calculator.classify_rating(total_score)
-        pins = _build_sketch_pins(assessment.category_times, calculator)
+    for assessment in ns.load_all_assessments():
+        total_score = ns.calculate_total_score(assessment)
+        rating = ns.classify_rating(total_score)
+        pins = _build_sketch_pins(assessment["category_times"])
         cards.append({
             "assessment": assessment,
-            "score": round_half_up(total_score),
+            "score": ns.round_half_up(total_score),
             "rating": rating,
             "rating_var": RATING_COLOR_VAR[rating],
             "ring_style": _ring_style(total_score, rating),
-            "sketch_blocks": _build_sketch_blocks(assessment.assessment_id),
+            "sketch_blocks": _build_sketch_blocks(assessment["id"]),
             "sketch_pins": pins,
-            "breakdown": _breakdown_rows(assessment, calculator),
+            "breakdown": _breakdown_rows(assessment),
         })
     cards.sort(key=lambda row: row["score"], reverse=True)
     return render_template("dashboard.html", cards=cards)
@@ -266,8 +259,8 @@ def dashboard():
 def estimate():
     """Real geocode + nearby-amenity walk-time estimate -- no fabricated data.
 
-    Saves a genuine Assessment(auto=True) from real OSM places, or returns an
-    error for the client's inline message; never invents a score.
+    Saves a genuine auto-estimated assessment from real OSM places, or returns
+    an error for the client's inline message; never invents a score.
     """
     query = (request.form.get("query") or "").strip()
     if not query:
@@ -278,12 +271,22 @@ def estimate():
         return jsonify({"error": "Couldn't find that location. Try a more specific address."})
 
     lat, lon, display_name = location
-    category_times = geocoding.estimate_category_times(lat, lon)
+    # One Overpass search gives both the walking times and each place's real
+    # distance/bearing, which gets stored so the 3D view doesn't have to
+    # re-run the search on every page view.
+    places = geocoding.nearest_places(lat, lon)
+    category_times = geocoding.times_from_places(places)
 
-    assessments = storage.load_all_assessments()
-    new_id = storage.generate_next_id(assessments)
-    assessment = Assessment(new_id, query, display_name, category_times, auto=True)
-    storage.add_assessment(assessment)
+    assessments = ns.load_all_assessments()
+    new_id = ns.generate_next_id(assessments)
+    assessment = ns.make_assessment(
+        new_id, query, display_name, category_times, auto=True, lat=lat, lon=lon
+    )
+    assessment["places"] = {
+        key: {"meters": round(p["meters"], 1), "bearing": round(p["bearing"], 1), "name": p["name"]}
+        for key, p in places.items() if p
+    }
+    ns.add_assessment(assessment)
 
     return jsonify({"redirect": url_for("main.walk", assessment_id=new_id)})
 
@@ -294,14 +297,22 @@ def walk(assessment_id):
     if assessment is None:
         return redirect(url_for("main.dashboard"))
 
-    calculator = create_default_calculator()
-    total_score = calculator.calculate_total_score(assessment)
-    rating = calculator.classify_rating(total_score)
+    total_score = ns.calculate_total_score(assessment)
+    rating = ns.classify_rating(total_score)
+
+    # A real geocoded assessment stored where each nearest place actually is, so
+    # markers can sit on their true compass bearing. Manual assessments have no
+    # such data and keep the evenly-spaced fallback ring.
+    real_places = assessment.get("places") or {}
 
     facilities = []
-    for category_key, info in CATEGORIES.items():
-        minutes = max(1, assessment.get_time(category_key))
-        meters = round(max(12, minutes * 10) * FACILITY_METERS_PER_UNIT / 10) * 10
+    for category_key, info in ns.CATEGORIES.items():
+        minutes = max(1, assessment["category_times"][category_key])
+        place = real_places.get(category_key)
+        if place:
+            meters = int(round(place["meters"] / 10) * 10)
+        else:
+            meters = round(max(12, minutes * 10) * FACILITY_METERS_PER_UNIT / 10) * 10
         facilities.append({
             "id": category_key,
             "short": CATEGORY_SHORT[category_key],
@@ -309,13 +320,35 @@ def walk(assessment_id):
             "color": CATEGORY_COLORS[category_key],
             "minutes": minutes,
             "meters": meters,
+            "bearing": round(place["bearing"], 1) if place else None,
+            "name": place["name"] if place else "",
         })
 
     return render_template(
         "world.html", assessment=assessment,
-        score=round_half_up(total_score), rating=rating, rating_var=RATING_COLOR_VAR[rating],
+        score=ns.round_half_up(total_score), rating=rating, rating_var=RATING_COLOR_VAR[rating],
         ring_style=_ring_style(total_score, rating), facilities=facilities,
     )
+
+
+@bp.route("/assessments/<int:assessment_id>/buildings.json")
+def walk_buildings(assessment_id):
+    """Real OSM building footprints around a geocoded assessment.
+
+    Fetched by the 3D view after the page has already rendered, so a slow
+    Overpass response delays the real skyline rather than the whole page.
+    Returns an empty list for manual (non-geocoded) assessments, which tells
+    world-stage.js to keep its procedural city.
+    """
+    assessment = _assessment_or_none(assessment_id)
+    if assessment is None:
+        return jsonify({"buildings": []}), 404
+
+    lat, lon = assessment.get("lat"), assessment.get("lon")
+    if lat is None or lon is None:
+        return jsonify({"buildings": []})
+
+    return jsonify({"buildings": geocoding.fetch_buildings(lat, lon)})
 
 
 @bp.route("/assessments/new", methods=["GET", "POST"])
@@ -329,18 +362,18 @@ def new_assessment():
         if errors:
             for error in errors:
                 flash(error, "error")
-            return render_template("new_assessment.html", categories=CATEGORIES,
-                                    max_minutes=MAX_MINUTES, form=request.form), 400
+            return render_template("new_assessment.html", categories=ns.CATEGORIES,
+                                    max_minutes=ns.MAX_MINUTES, form=request.form), 400
 
-        assessments = storage.load_all_assessments()
-        new_id = storage.generate_next_id(assessments)
-        assessment = Assessment(new_id, nickname, location_note, category_times)
-        storage.add_assessment(assessment)
+        assessments = ns.load_all_assessments()
+        new_id = ns.generate_next_id(assessments)
+        assessment = ns.make_assessment(new_id, nickname, location_note, category_times)
+        ns.add_assessment(assessment)
         flash(f'Assessment #{new_id} "{nickname}" saved.', "success")
         return redirect(url_for("main.detail", assessment_id=new_id))
 
-    return render_template("new_assessment.html", categories=CATEGORIES,
-                            max_minutes=MAX_MINUTES, form={})
+    return render_template("new_assessment.html", categories=ns.CATEGORIES,
+                            max_minutes=ns.MAX_MINUTES, form={})
 
 
 @bp.route("/preview-score", methods=["POST"])
@@ -350,14 +383,14 @@ def preview_score():
     if errors:
         return render_template("_score_preview.html", ready=False)
 
-    calculator = create_default_calculator()
-    total_score = calculator.calculate_total_score(Assessment(0, "preview", "", category_times))
-    rating = calculator.classify_rating(total_score)
+    draft = ns.make_assessment(0, "preview", "", category_times)
+    total_score = ns.calculate_total_score(draft)
+    rating = ns.classify_rating(total_score)
     return render_template(
         "_score_preview.html", ready=True,
-        score=round_half_up(total_score), rating=rating, rating_var=RATING_COLOR_VAR[rating],
+        score=ns.round_half_up(total_score), rating=rating, rating_var=RATING_COLOR_VAR[rating],
         ring_style=_ring_style(total_score, rating),
-        radar_points=_radar_points(category_times, calculator), axis_labels=_axis_labels(),
+        radar_points=_radar_points(category_times), axis_labels=_axis_labels(),
     )
 
 
@@ -367,25 +400,24 @@ def detail(assessment_id):
     if assessment is None:
         return redirect(url_for("main.dashboard"))
 
-    calculator = create_default_calculator()
-    total_score = calculator.calculate_total_score(assessment)
-    rating = calculator.classify_rating(total_score)
-    pins = _build_sketch_pins(assessment.category_times, calculator)
+    total_score = ns.calculate_total_score(assessment)
+    rating = ns.classify_rating(total_score)
+    pins = _build_sketch_pins(assessment["category_times"])
 
     return render_template(
         "detail.html", assessment=assessment,
-        score=round_half_up(total_score), rating=rating, rating_var=RATING_COLOR_VAR[rating],
+        score=ns.round_half_up(total_score), rating=rating, rating_var=RATING_COLOR_VAR[rating],
         ring_style=_ring_style(total_score, rating),
-        breakdown=_breakdown_rows(assessment, calculator),
-        radar_points=_radar_points(assessment.category_times, calculator),
-        radar_vertices=_radar_vertices(assessment.category_times, calculator),
+        breakdown=_breakdown_rows(assessment),
+        radar_points=_radar_points(assessment["category_times"]),
+        radar_vertices=_radar_vertices(assessment["category_times"]),
         axis_labels=_axis_labels(),
-        sketch_blocks=_build_sketch_blocks(assessment.assessment_id, count=16),
+        sketch_blocks=_build_sketch_blocks(assessment["id"], count=16),
         sketch_pins=pins,
         park_cluster=_build_park_cluster(pins),
         transit_ticks=_build_transit_ticks(pins),
-        recommendations=_build_recommendation_cards(assessment, calculator),
-        others=[a for a in storage.load_all_assessments() if a.assessment_id != assessment_id],
+        recommendations=_build_recommendation_cards(assessment),
+        others=[a for a in ns.load_all_assessments() if a["id"] != assessment_id],
     )
 
 
@@ -405,29 +437,29 @@ def edit_assessment(assessment_id):
             for error in errors:
                 flash(error, "error")
             return render_template("edit_assessment.html", assessment=assessment,
-                                    categories=CATEGORIES, max_minutes=MAX_MINUTES,
+                                    categories=ns.CATEGORIES, max_minutes=ns.MAX_MINUTES,
                                     form=request.form), 400
 
-        assessment.nickname = nickname
-        assessment.location_note = location_note
+        assessment["nickname"] = nickname
+        assessment["location_note"] = location_note
         for category_key, minutes in category_times.items():
-            assessment.set_time(category_key, minutes)
-        storage.update_assessment(assessment)
+            assessment["category_times"][category_key] = minutes
+        ns.update_assessment(assessment)
         flash("Assessment updated.", "success")
         return redirect(url_for("main.detail", assessment_id=assessment_id))
 
-    form_data = {"nickname": assessment.nickname, "location_note": assessment.location_note}
-    form_data.update({key: assessment.get_time(key) for key in CATEGORIES})
+    form_data = {"nickname": assessment["nickname"], "location_note": assessment["location_note"]}
+    form_data.update(assessment["category_times"])
     return render_template("edit_assessment.html", assessment=assessment,
-                            categories=CATEGORIES, max_minutes=MAX_MINUTES, form=form_data)
+                            categories=ns.CATEGORIES, max_minutes=ns.MAX_MINUTES, form=form_data)
 
 
 @bp.route("/assessments/<int:assessment_id>/delete", methods=["POST"])
 def delete_assessment(assessment_id):
     assessment = _assessment_or_none(assessment_id)
     if assessment is not None:
-        storage.delete_assessment_by_id(assessment_id)
-        flash(f'Assessment #{assessment_id} "{assessment.nickname}" deleted.', "success")
+        ns.delete_assessment_by_id(assessment_id)
+        flash(f'Assessment #{assessment_id} "{assessment["nickname"]}" deleted.', "success")
 
     if request.headers.get("HX-Request"):
         return "", 200, {"HX-Redirect": url_for("main.dashboard")}
@@ -436,8 +468,7 @@ def delete_assessment(assessment_id):
 
 @bp.route("/compare")
 def compare():
-    calculator = create_default_calculator()
-    assessments = storage.load_all_assessments()
+    assessments = ns.load_all_assessments()
     id_a = request.args.get("a", type=int)
     id_b = request.args.get("b", type=int)
 
@@ -446,39 +477,40 @@ def compare():
         if id_a == id_b:
             flash("Please choose two different assessments to compare.", "error")
         else:
-            assessment_a = storage.find_assessment_by_id(assessments, id_a)
-            assessment_b = storage.find_assessment_by_id(assessments, id_b)
+            assessment_a = ns.find_assessment_by_id(assessments, id_a)
+            assessment_b = ns.find_assessment_by_id(assessments, id_b)
             if assessment_a is None or assessment_b is None:
                 flash("One or both assessment IDs were not found.", "error")
             else:
-                result = _build_comparison(calculator, assessment_a, assessment_b)
+                result = _build_comparison(assessment_a, assessment_b)
 
     return render_template("compare.html", assessments=assessments, id_a=id_a, id_b=id_b,
                             result=result, axis_labels=_axis_labels())
 
 
-def _build_comparison(calculator, assessment_a, assessment_b):
+def _build_comparison(assessment_a, assessment_b):
     """Per-category diff rows, dual radar polygons, and a verdict that cites which
     categories actually drove the winning margin (not just who scored higher)."""
-    score_a = round_half_up(calculator.calculate_total_score(assessment_a))
-    score_b = round_half_up(calculator.calculate_total_score(assessment_b))
+    score_a = ns.round_half_up(ns.calculate_total_score(assessment_a))
+    score_b = ns.round_half_up(ns.calculate_total_score(assessment_b))
 
     rows = []
-    for category_key, info in CATEGORIES.items():
-        points_a = calculator.calculate_category_score(category_key, assessment_a.get_time(category_key))
-        points_b = calculator.calculate_category_score(category_key, assessment_b.get_time(category_key))
+    for category_key, info in ns.CATEGORIES.items():
+        points_a = ns.calculate_category_score(category_key, assessment_a["category_times"][category_key])
+        points_b = ns.calculate_category_score(category_key, assessment_b["category_times"][category_key])
         winner = "a" if points_a > points_b else ("b" if points_b > points_a else "tie")
         rows.append({
             "key": category_key, "label": info["label"],
             "letter": CATEGORY_LETTERS[category_key], "color": CATEGORY_COLORS[category_key],
-            "a_minutes": assessment_a.get_time(category_key), "b_minutes": assessment_b.get_time(category_key),
+            "a_minutes": assessment_a["category_times"][category_key],
+            "b_minutes": assessment_b["category_times"][category_key],
             "a_pct": round(points_a / info["weight"] * 100), "b_pct": round(points_b / info["weight"] * 100),
             "winner": winner, "gap": abs(points_a - points_b),
         })
 
     score_diff = score_a - score_b
     if score_diff == 0:
-        verdict = (f"{assessment_a.nickname} and {assessment_b.nickname} score evenly overall at "
+        verdict = (f"{assessment_a['nickname']} and {assessment_b['nickname']} score evenly overall at "
                    f"{score_a}/100 -- the difference shows up category by category.")
     else:
         winner_key = "a" if score_diff > 0 else "b"
@@ -488,22 +520,22 @@ def _build_comparison(calculator, assessment_a, assessment_b):
         )[:2]]
         margin = round(abs(score_diff), 1)
         if drivers:
-            verdict = (f"{winner_assessment.nickname} is the more walkable 15-minute neighborhood, "
+            verdict = (f"{winner_assessment['nickname']} is the more walkable 15-minute neighborhood, "
                        f"scoring {margin} points higher -- leading mainly on {' and '.join(drivers)}.")
         else:
-            verdict = (f"{winner_assessment.nickname} is the more walkable 15-minute neighborhood, "
+            verdict = (f"{winner_assessment['nickname']} is the more walkable 15-minute neighborhood, "
                        f"scoring {margin} points higher.")
 
-    rating_a = calculator.classify_rating(calculator.calculate_total_score(assessment_a))
-    rating_b = calculator.classify_rating(calculator.calculate_total_score(assessment_b))
+    rating_a = ns.classify_rating(ns.calculate_total_score(assessment_a))
+    rating_b = ns.classify_rating(ns.calculate_total_score(assessment_b))
 
     return {
         "a": assessment_a, "b": assessment_b, "score_a": score_a, "score_b": score_b,
         "rating_a": rating_a, "rating_b": rating_b,
         "rating_a_var": RATING_COLOR_VAR[rating_a], "rating_b_var": RATING_COLOR_VAR[rating_b],
         "rows": rows, "verdict": verdict,
-        "radar_a": _radar_points(assessment_a.category_times, calculator),
-        "radar_b": _radar_points(assessment_b.category_times, calculator),
+        "radar_a": _radar_points(assessment_a["category_times"]),
+        "radar_b": _radar_points(assessment_b["category_times"]),
     }
 
 
@@ -511,7 +543,7 @@ def _build_comparison(calculator, assessment_a, assessment_b):
 def about():
     tier_rows = []
     previous_upper = 0
-    for upper, percent in TIER_TABLE:
+    for upper, percent in ns.TIER_TABLE:
         if upper is None:
             label = f"> {previous_upper} min"
         elif previous_upper == 0:
@@ -523,6 +555,6 @@ def about():
             previous_upper = upper
 
     return render_template(
-        "about.html", categories=CATEGORIES, tiers=tier_rows, rating_bands=RATING_BANDS,
+        "about.html", categories=ns.CATEGORIES, tiers=tier_rows, rating_bands=ns.RATING_BANDS,
         rating_color_var=RATING_COLOR_VAR,
     )

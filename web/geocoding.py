@@ -70,14 +70,36 @@ def geocode(query):
 
 def estimate_category_times(lat, lon):
     """Return {category_key: minutes} estimated from real nearby OSM places."""
-    nearest_meters = _nearest_meters_per_category(lat, lon)
+    nearest = _nearest_per_category(lat, lon)
     return {
-        category_key: (_meters_to_minutes(distance) if distance is not None else FALLBACK_MINUTES)
-        for category_key, distance in nearest_meters.items()
+        category_key: (_meters_to_minutes(place["meters"]) if place else FALLBACK_MINUTES)
+        for category_key, place in nearest.items()
     }
 
 
-def _nearest_meters_per_category(lat, lon):
+def nearest_places(lat, lon):
+    """Return {category_key: {meters, bearing, name} or None} for the real nearest place.
+
+    Same Overpass search estimate_category_times() uses, but keeps the bearing
+    and name so the 3D view can put each marker in its true compass direction
+    instead of an arbitrary evenly-spaced angle.
+    """
+    return _nearest_per_category(lat, lon)
+
+
+def times_from_places(places):
+    """Convert the result of nearest_places() into {category_key: minutes}.
+
+    Lets a caller run the (slow) Overpass search once and get both the walking
+    times and the map geometry out of it, instead of searching twice.
+    """
+    return {
+        category_key: (_meters_to_minutes(place["meters"]) if place else FALLBACK_MINUTES)
+        for category_key, place in places.items()
+    }
+
+
+def _nearest_per_category(lat, lon):
     nearest = _search_categories(lat, lon, CATEGORY_TAGS.keys(), NEARBY_RADIUS_METERS)
 
     # Every category coming back empty at a 1200m radius is a strong sign the
@@ -85,10 +107,10 @@ def _nearest_meters_per_category(lat, lon):
     # rather than a genuinely amenity-free location -- worth one retry before
     # treating it as real. A retry after a partial result is not: those are
     # plausible genuine misses that the wider second pass already handles.
-    if all(distance is None for distance in nearest.values()):
+    if all(place is None for place in nearest.values()):
         nearest = _search_categories(lat, lon, CATEGORY_TAGS.keys(), NEARBY_RADIUS_METERS)
 
-    missing = [key for key, distance in nearest.items() if distance is None]
+    missing = [key for key, place in nearest.items() if place is None]
     if missing:
         wide_results = _search_categories(lat, lon, missing, WIDE_RADIUS_METERS)
         nearest.update(wide_results)
@@ -112,8 +134,13 @@ def _search_categories(lat, lon, category_keys, radius_m):
         for category_key in category_keys:
             if not _matches_category(tags, category_key):
                 continue
-            if nearest[category_key] is None or distance < nearest[category_key]:
-                nearest[category_key] = distance
+            current = nearest[category_key]
+            if current is None or distance < current["meters"]:
+                nearest[category_key] = {
+                    "meters": distance,
+                    "bearing": _bearing_degrees(lat, lon, element_lat, element_lon),
+                    "name": tags.get("name") or "",
+                }
 
     return nearest
 
@@ -155,5 +182,106 @@ def _haversine_meters(lat1, lon1, lat2, lon2):
     return 2 * earth_radius_m * math.asin(math.sqrt(a))
 
 
+def _bearing_degrees(lat1, lon1, lat2, lon2):
+    """Initial compass bearing from point 1 to point 2: 0 = north, 90 = east."""
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    delta_lambda = math.radians(lon2 - lon1)
+    y = math.sin(delta_lambda) * math.cos(phi2)
+    x = math.cos(phi1) * math.sin(phi2) - math.sin(phi1) * math.cos(phi2) * math.cos(delta_lambda)
+    return (math.degrees(math.atan2(y, x)) + 360) % 360
+
+
 def _meters_to_minutes(distance_m):
     return round(distance_m * DETOUR_FACTOR / WALK_METERS_PER_MINUTE, 1)
+
+
+# --- Real building footprints (for the 3D walkthrough) --------------------
+#
+# OpenStreetMap is the free, key-less source of real 3D building data: any
+# way tagged building=* is a real footprint, and where mappers have added
+# height or building:levels we get a real height too. That is the same data
+# behind OSM Buildings and F4Map. Coverage is uneven -- plenty of towns have
+# footprints but no height tags, and some have no buildings mapped at all --
+# so heights fall back to a per-type estimate, and a location with no
+# buildings at all falls back to the procedural city in world-stage.js.
+
+BUILDINGS_RADIUS_METERS = 800  # ~10 minutes' walk out, the zone the score is about
+BUILDINGS_MAX = 1400
+METERS_PER_LEVEL = 3.2
+DEFAULT_LEVELS = {"house": 1, "detached": 2, "garage": 1, "hut": 1, "shed": 1, "bungalow": 1}
+DEFAULT_BUILDING_METERS = 9.0
+
+
+def fetch_buildings(lat, lon, radius_m=BUILDINGS_RADIUS_METERS):
+    """Return real OSM building footprints near a point, as local metre offsets.
+
+    Each item is {"points": [[east_m, north_m], ...], "height": metres}, with
+    east/north measured from (lat, lon). Returns [] when Overpass is
+    unavailable or the area has no mapped buildings -- callers treat an empty
+    list as "fall back to the procedural city".
+    """
+    query = (
+        f"[out:json][timeout:{OVERPASS_QUERY_BUDGET_SECONDS}];\n"
+        f"(way[\"building\"](around:{radius_m},{lat},{lon}););\n"
+        "out geom;"
+    )
+    payload = _run_overpass_query(query)
+
+    metres_per_deg_lat = 111320.0
+    metres_per_deg_lon = 111320.0 * math.cos(math.radians(lat))
+
+    buildings = []
+    for element in payload.get("elements", []):
+        geometry = element.get("geometry") or []
+        if len(geometry) < 4:
+            continue
+
+        points = [
+            [
+                round((node["lon"] - lon) * metres_per_deg_lon, 2),
+                round((node["lat"] - lat) * metres_per_deg_lat, 2),
+            ]
+            for node in geometry
+            if node.get("lat") is not None and node.get("lon") is not None
+        ]
+        if len(points) < 4:
+            continue
+        if points[0] == points[-1]:
+            points.pop()  # Three.js Shape closes the ring itself
+        if len(points) < 3:
+            continue
+
+        buildings.append({"points": points, "height": _building_height(element.get("tags", {}))})
+        if len(buildings) >= BUILDINGS_MAX:
+            break
+
+    return buildings
+
+
+def _building_height(tags):
+    """Best available height in metres: real height tag, else levels, else a default."""
+    height = _first_float(tags.get("height"))
+    if height is not None and 0 < height < 700:
+        return round(height, 1)
+
+    levels = _first_float(tags.get("building:levels"))
+    if levels is not None and 0 < levels < 200:
+        return round(levels * METERS_PER_LEVEL, 1)
+
+    return DEFAULT_LEVELS.get(tags.get("building"), 0) * METERS_PER_LEVEL or DEFAULT_BUILDING_METERS
+
+
+def _first_float(raw_value):
+    """Parse a leading number out of an OSM tag ('12', '12.5 m', '4;6' -> 12/12.5/4)."""
+    if not raw_value:
+        return None
+    number = ""
+    for character in str(raw_value).strip():
+        if character.isdigit() or (character == "." and "." not in number):
+            number += character
+        else:
+            break
+    try:
+        return float(number)
+    except ValueError:
+        return None

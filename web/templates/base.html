@@ -15,7 +15,7 @@
 {% block body %}
   <div class="nav-chrome">
     <div class="nav-inner">
-      <a href="{{ url_for('main.dashboard') }}" class="wordmark">
+      <a href="{{ url_for('main.landing') }}" class="wordmark">
         <svg width="30" height="30" viewBox="0 0 24 24">
           <path d="M12 21s7-7.58 7-12A7 7 0 0 0 5 9c0 4.42 7 12 7 12z" fill="var(--brand)"></path>
           <circle cx="12" cy="9" r="2.6" fill="var(--paper2)"></circle>
@@ -26,6 +26,7 @@
         </div>
       </a>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="{{ url_for('main.dashboard') }}" class="btn">Dashboard</a>
         <a href="{{ url_for('main.compare') }}" class="btn">Compare</a>
         <a href="{{ url_for('main.about') }}" class="btn">About</a>
         <a href="{{ url_for('main.new_assessment') }}" class="btn btn-accent">+ New Assessment</a>

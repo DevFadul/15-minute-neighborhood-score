@@ -537,41 +537,67 @@
         this._markers.push({ id: cat.id, x: x, z: z, beacon: beacon, phase: i, label: label });
       }, this);
 
-      // Frame the camera around the furthest facility so all six markers are
-      // on screen from the start, and grow the walker's pin to match, so it
-      // stays findable when the view is pulled a kilometre back.
+      // Default framing sits just outside the furthest facility so all six
+      // markers are on screen at once. Markers surround the walker, so the
+      // camera looks down steeply enough to cover every direction.
       var furthest = 0;
       this._markers.forEach(function (m) { furthest = Math.max(furthest, Math.hypot(m.x, m.z)); });
-      // Markers sit all around the walker, so the camera looks down steeply
-      // enough to cover every direction, not just the way it is facing --
-      // close enough that streets and buildings still read at a glance.
-      this._frame = Math.max(220, Math.min(1500, furthest * 1.02));
-      this._camBack = this._frame * 0.62;
-      this._camUp = this._frame * 0.8;
-      // Walking pace scales with how far back the view sits, so crossing the
-      // neighborhood feels the same whether it is 300 m or 1.5 km across.
-      this._speed = Math.max(12, this._frame / 20);
+      this._baseFrame = Math.max(220, Math.min(1500, furthest * 1.02));
+      this._applyFrame();
+    }
+
+    /* Everything that depends on how far back the view sits: camera distance,
+       avatar size, walking pace, haze and label height. Recomputed on zoom so
+       the whole scene stays consistent at any level. */
+    _applyFrame() {
+      var frame = this._frame = Math.max(150, Math.min(4000, this._baseFrame * (this._zoom || 1)));
+
+      this._camBack = frame * 0.62;
+      this._camUp = frame * 0.8;
+
+      // A real 1.8 m person is under a pixel from 400 m up, so the walker is
+      // drawn as a map avatar: sized in step with the view so it stays legible
+      // at any zoom. Pace follows size directly -- a bigger avatar covers more
+      // ground per stride, so zooming out speeds the walk up.
+      this._avatarScale = Math.max(1.5, Math.min(30, frame / 32));
+      this._speed = Math.max(12, Math.min(70, this._avatarScale * 1.9));
+      if (this._player) this._player.scale.setScalar(this._avatarScale);
+
       // Haze has to start beyond the framed area, or pulling the camera back
       // to fit a distant facility fogs the whole neighborhood out.
       if (this._scene && this._scene.fog) {
-        this._scene.fog.near = this._frame * 1.7;
-        this._scene.fog.far = this._frame * 5.5;
+        this._scene.fog.near = frame * 1.7;
+        this._scene.fog.far = frame * 5.5;
       }
-      // A real 1.8 m person is under a pixel from 400 m up, so the walker is
-      // drawn as a map avatar instead: scaled in step with how far back the
-      // camera sits, which keeps it the same apparent size on screen at any
-      // zoom. The pin rides along as part of the same group.
-      this._avatarScale = Math.max(1, Math.min(20, this._frame / 42));
-      if (this._player) this._player.scale.setScalar(this._avatarScale);
 
       // Float the signs well above the avatar's head so a marker standing
       // almost on top of you doesn't hide you behind its label.
-      var labelH = Math.max(38, this._frame * 0.17);
-      this._markers.forEach(function (m) {
+      var labelH = Math.max(38, frame * 0.17);
+      (this._markers || []).forEach(function (m) {
         if (m.label) m.label.sprite.position.y = labelH;
       });
 
       this._layoutLabels();
+    }
+
+    /* Public: multiply the zoom level. >1 pulls back, <1 moves in. */
+    zoomBy(factor) {
+      if (!this._baseFrame) return;
+      this._zoom = Math.max(0.35, Math.min(4, (this._zoom || 1) * factor));
+      this._applyFrame();
+      this.dispatchEvent(new CustomEvent('nhs-zoom', {
+        bubbles: true,
+        detail: { zoom: this._zoom, avatarScale: this._avatarScale, speed: this._speed }
+      }));
+    }
+
+    zoomReset() {
+      this._zoom = 1;
+      this._applyFrame();
+      this.dispatchEvent(new CustomEvent('nhs-zoom', {
+        bubbles: true,
+        detail: { zoom: 1, avatarScale: this._avatarScale, speed: this._speed }
+      }));
     }
 
     _layoutLabels() {
@@ -590,11 +616,21 @@
         if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].indexOf(k) >= 0) {
           self._keys[k] = true;
           e.preventDefault();
+          return;
         }
+        if (k === '-' || k === '_') { self.zoomBy(1.18); e.preventDefault(); }
+        else if (k === '=' || k === '+') { self.zoomBy(1 / 1.18); e.preventDefault(); }
+        else if (k === '0') { self.zoomReset(); e.preventDefault(); }
       };
       this._onKeyUp = function (e) { self._keys[e.key.toLowerCase()] = false; };
       window.addEventListener('keydown', this._onKeyDown);
       window.addEventListener('keyup', this._onKeyUp);
+
+      this._onWheel = function (e) {
+        e.preventDefault();
+        self.zoomBy(e.deltaY > 0 ? 1.1 : 1 / 1.1);
+      };
+      this.addEventListener('wheel', this._onWheel, { passive: false });
 
       this._onDown = function (e) { self._drag = { x: e.clientX }; self.style.cursor = 'grabbing'; };
       this._onMove = function (e) {
@@ -733,6 +769,7 @@
       window.removeEventListener('keyup', this._onKeyUp);
       window.removeEventListener('pointermove', this._onMove);
       window.removeEventListener('pointerup', this._onUp);
+      if (this._onWheel) this.removeEventListener('wheel', this._onWheel);
       document.removeEventListener('visibilitychange', this._onVis);
       if (this._renderer) { this._renderer.dispose(); this._renderer = null; }
     }

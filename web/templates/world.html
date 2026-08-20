@@ -24,7 +24,17 @@
   </div>
 
   <div style="position:absolute;top:22px;right:24px;background:var(--paper2);border:1px solid var(--ink);padding:10px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.04em;text-transform:uppercase;color:var(--ink2);white-space:nowrap;">
-    W A S D or arrows to walk &middot; drag to look
+    W A S D or arrows to walk &middot; drag to look &middot; scroll to zoom
+  </div>
+
+  <div style="position:absolute;top:74px;right:24px;display:flex;flex-direction:column;align-items:stretch;gap:0;background:var(--paper2);border:1px solid var(--ink);">
+    <button type="button" id="zoom-out" title="Zoom out (bigger, faster walker)"
+            style="border:none;border-bottom:1px solid var(--line);background:none;cursor:pointer;padding:7px 0;width:40px;font-family:'IBM Plex Mono',monospace;font-size:17px;line-height:1;color:var(--ink);">&minus;</button>
+    <button type="button" id="zoom-in" title="Zoom in (smaller, slower walker)"
+            style="border:none;border-bottom:1px solid var(--line);background:none;cursor:pointer;padding:7px 0;width:40px;font-family:'IBM Plex Mono',monospace;font-size:17px;line-height:1;color:var(--ink);">+</button>
+    <button type="button" id="zoom-reset" title="Reset the view"
+            style="border:none;background:none;cursor:pointer;padding:6px 0;width:40px;font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.06em;color:var(--ink2);">RESET</button>
+    <div id="zoom-readout" style="border-top:1px solid var(--line);padding:5px 0;width:40px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ink2);">1.0&times;</div>
   </div>
 
   <div style="position:absolute;left:0;right:0;bottom:0;background:var(--paper2);border-top:1px solid var(--ink);padding:11px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:nowrap;">
@@ -48,4 +58,24 @@
     </div>
   </div>
 </div>
+
+<script>
+(function () {
+  var stage = document.querySelector('world-stage');
+  var readout = document.getElementById('zoom-readout');
+
+  function bind(id, fn) {
+    var el = document.getElementById(id);
+    // Keep focus on the page, not the button, so W/A/S/D keeps working after a click.
+    el.addEventListener('click', function (e) { e.preventDefault(); fn(); el.blur(); });
+  }
+  bind('zoom-out', function () { stage.zoomBy(1.25); });
+  bind('zoom-in', function () { stage.zoomBy(1 / 1.25); });
+  bind('zoom-reset', function () { stage.zoomReset(); });
+
+  document.addEventListener('nhs-zoom', function (e) {
+    readout.textContent = e.detail.zoom.toFixed(1) + '×';
+  });
+})();
+</script>
 {% endblock %}

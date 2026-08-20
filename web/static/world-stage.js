@@ -9,7 +9,7 @@
   var WALK_M_PER_MIN = 80;   // matches geocoding.py's WALK_METERS_PER_MINUTE
   var DETOUR = 1.3;          // matches geocoding.py's DETOUR_FACTOR, so the live
                              // readout agrees with the minutes the server scored
-  var MOVE_SPEED = 11;       // m/s -- brisk enough to cross the map without waiting
+  var MOVE_SPEED = 18;       // m/s fallback; the real pace scales with the view
   var WORLD_LIMIT = 1600;    // how far the walker may roam from the origin
   var MARKER_POLE_H = 30;
   var LABEL_H = 38;
@@ -27,35 +27,55 @@
     return m >= 1000 ? (m / 1000).toFixed(1) + ' km' : Math.round(m) + ' m';
   }
 
-  function labelSprite(THREE, cat) {
+  function fmtMinutes(minutes) {
+    if (minutes < 0.05) return '0';
+    return minutes < 9.95 ? minutes.toFixed(1) : String(Math.round(minutes));
+  }
+
+  /* A marker's label. The distance/time/heading are redrawn as the walker
+     moves, so the sign always reads the live figure rather than a value
+     baked in when the page loaded. */
+  function makeLabel(THREE, cat) {
     var c = document.createElement('canvas');
     c.width = 512; c.height = 150;
     var g = c.getContext('2d');
-    g.fillStyle = '#faf6ec';
-    g.fillRect(0, 0, 512, 150);
-    g.strokeStyle = cat.color; g.lineWidth = 10;
-    g.strokeRect(5, 5, 502, 140);
-    g.fillStyle = cat.color;
-    g.fillRect(5, 5, 96, 140);
-    g.fillStyle = '#faf6ec';
-    g.font = '700 64px "IBM Plex Mono", monospace';
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(cat.letter, 53, 78);
-    g.fillStyle = '#221b12';
-    g.textAlign = 'left';
-    g.font = '700 40px "Public Sans", system-ui, sans-serif';
+    var tex = new THREE.CanvasTexture(c);
+    var sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: tex, transparent: true, depthTest: false, sizeAttenuation: false
+    }));
+    sprite.renderOrder = 5;
+    sprite.scale.set(0.19, 0.099, 1);
+
     var title = (cat.name || cat.short || '').toUpperCase();
     if (title.length > 17) title = title.slice(0, 16) + '…';
-    g.fillText(title, 124, 52);
-    g.fillStyle = '#6e6248';
-    g.font = '500 32px "IBM Plex Mono", monospace';
-    g.fillText(cat.minutes + ' MIN · ' + fmtMetres(cat.meters) + (cat.compass ? ' · ' + cat.compass : ''), 124, 104);
-    var tex = new THREE.CanvasTexture(c);
-    tex.needsUpdate = true;
-    var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, sizeAttenuation: false }));
-    sp.renderOrder = 5;
-    sp.scale.set(0.19, 0.099, 1);
-    return sp;
+    var lastLine = null;
+
+    function draw(metres, minutes, compass) {
+      var line = fmtMinutes(minutes) + ' MIN · ' + fmtMetres(metres) + (compass ? ' · ' + compass : '');
+      if (line === lastLine) return;   // skip the texture upload when nothing changed
+      lastLine = line;
+
+      g.fillStyle = '#faf6ec';
+      g.fillRect(0, 0, 512, 150);
+      g.strokeStyle = cat.color; g.lineWidth = 10;
+      g.strokeRect(5, 5, 502, 140);
+      g.fillStyle = cat.color;
+      g.fillRect(5, 5, 96, 140);
+      g.fillStyle = '#faf6ec';
+      g.font = '700 64px "IBM Plex Mono", monospace';
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(cat.letter, 53, 78);
+      g.fillStyle = '#221b12';
+      g.textAlign = 'left';
+      g.font = '700 40px "Public Sans", system-ui, sans-serif';
+      g.fillText(title, 124, 52);
+      g.fillStyle = '#6e6248';
+      g.font = '500 32px "IBM Plex Mono", monospace';
+      g.fillText(line, 124, 104);
+      tex.needsUpdate = true;
+    }
+
+    return { sprite: sprite, draw: draw };
   }
 
   /* Merge many small geometries into one, baking each one's colour into a
@@ -146,7 +166,11 @@
       scene.fog = new THREE.Fog(0xdcd2b4, 700, 2600);
       this._scene = scene;
 
-      var camera = new THREE.PerspectiveCamera(52, w / h, 0.5, 9000);
+      // The camera never gets closer than ~100 m to anything, so a near plane
+      // of 4 is safe -- and it matters: at near 0.5 against far 9000 the depth
+      // buffer has so little precision near the ground that the roads and the
+      // ground plane z-fight and shimmer.
+      var camera = new THREE.PerspectiveCamera(52, w / h, 4, 9000);
       this._camera = camera;
 
       scene.add(new THREE.HemisphereLight(0xfff6e0, 0x8a8163, 1.05));
@@ -182,15 +206,20 @@
       ground.rotation.x = -Math.PI / 2;
       scene.add(ground);
 
-      var plaza = new THREE.Mesh(new THREE.CircleGeometry(30, 40), new THREE.MeshLambertMaterial({ color: 0xd6c9a4 }));
+      var plaza = new THREE.Mesh(new THREE.CircleGeometry(30, 40), new THREE.MeshLambertMaterial({
+        color: 0xd6c9a4, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -12
+      }));
       plaza.rotation.x = -Math.PI / 2;
-      plaza.position.y = 0.12;
+      plaza.position.y = 0.6;
       scene.add(plaza);
 
-      var ringMat = new THREE.MeshBasicMaterial({ color: 0x9c3b23, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+      var ringMat = new THREE.MeshBasicMaterial({
+        color: 0x9c3b23, transparent: true, opacity: 0.5, side: THREE.DoubleSide,
+        depthWrite: false, polygonOffset: true, polygonOffsetFactor: -8, polygonOffsetUnits: -16
+      });
       var ring = new THREE.Mesh(new THREE.RingGeometry(28.5, 30, 48), ringMat);
       ring.rotation.x = -Math.PI / 2;
-      ring.position.y = 0.2;
+      ring.position.y = 0.9;
       scene.add(ring);
     }
 
@@ -205,15 +234,21 @@
 
       var CELL = 130, ROAD = 22, SPAN = 11;
       var reach = SPAN * CELL;
-      var roadMat = new THREE.MeshLambertMaterial({ color: 0x8d8467 });
+      // Roads sit flat on the ground plane, so they need both a real height
+      // gap and a polygon offset to stop the two coplanar surfaces fighting
+      // over which is in front (which reads as flickering, colour-swapping
+      // streets when the camera is far back).
+      var roadMat = new THREE.MeshLambertMaterial({
+        color: 0x8d8467, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8
+      });
       for (var i = -SPAN; i <= SPAN; i++) {
         var rx = new THREE.Mesh(new THREE.PlaneGeometry(2 * reach, ROAD), roadMat);
         rx.rotation.x = -Math.PI / 2;
-        rx.position.set(0, 0.05, i * CELL);
+        rx.position.set(0, 0.4, i * CELL);
         group.add(rx);
         var rz = new THREE.Mesh(new THREE.PlaneGeometry(ROAD, 2 * reach), roadMat);
         rz.rotation.x = -Math.PI / 2;
-        rz.position.set(i * CELL, 0.05, 0);
+        rz.position.set(i * CELL, 0.4, 0);
         group.add(rz);
       }
 
@@ -342,51 +377,81 @@
     _buildPlayer() {
       var THREE = this._THREE;
       var g = new THREE.Group();
-      var skin = new THREE.MeshLambertMaterial({ color: 0xe8c9a0 });
-      var cloth = new THREE.MeshLambertMaterial({ color: 0x1f3d2e });
-      var legMat = new THREE.MeshLambertMaterial({ color: 0x33302a });
+      // Three well-separated tones, because at ~25 px the avatar is read as a
+      // silhouette, not a model: dark head, bright torso, dark legs, all sat
+      // on a cream disc. A pale head would vanish against that disc.
+      var skin = new THREE.MeshLambertMaterial({ color: 0x4a3a2e });
+      var cloth = new THREE.MeshLambertMaterial({ color: 0xd1552f });
+      var legMat = new THREE.MeshLambertMaterial({ color: 0x2b2b33 });
 
-      // Roughly 1.8 m tall, so real building heights read correctly.
-      var body = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 0.62, 6, 12), cloth);
+      // Real proportions are ~1.8 m; the head is enlarged a little because a
+      // realistic one disappears at this on-screen size.
+      var body = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.6, 6, 12), cloth);
       body.position.y = 1.05;
       g.add(body);
-      var head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 12), skin);
-      head.position.y = 1.62;
+      var head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 12), skin);
+      head.position.y = 1.72;
       g.add(head);
       this._legs = [];
-      [-0.16, 0.16].forEach(function (x) {
-        var leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.46, 4, 8), legMat);
+      [-0.17, 0.17].forEach(function (x) {
+        var leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.46, 4, 8), legMat);
         leg.position.set(x, 0.4, 0);
         g.add(leg);
         this._legs.push(leg);
       }, this);
-      [-0.36, 0.36].forEach(function (x) {
-        var arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.42, 4, 8), cloth);
+      [-0.42, 0.42].forEach(function (x) {
+        var arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.42, 4, 8), cloth);
         arm.position.set(x, 1.08, 0);
         g.add(arm);
       });
 
-      // Oversized map pin so the walker stays findable among tall buildings.
+      // A slim pin floating just above the head, drawn on top of everything so
+      // the walker can still be found behind a tall building. Kept small on
+      // purpose: the person should be the thing you see, not the marker.
       var pinMat = new THREE.MeshBasicMaterial({ color: 0x9c3b23, depthTest: false });
-      var pin = new THREE.Mesh(new THREE.ConeGeometry(1.5, 3.4, 12), pinMat);
+      var pin = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.0, 12), pinMat);
       pin.rotation.x = Math.PI;
-      pin.position.y = 5.4;
+      pin.position.y = 2.55;
       pin.renderOrder = 4;
       g.add(pin);
-      var pinBall = new THREE.Mesh(new THREE.SphereGeometry(1.5, 14, 10), pinMat);
-      pinBall.position.y = 8.1;
+      var pinBall = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10), pinMat);
+      pinBall.position.y = 3.2;
       pinBall.renderOrder = 4;
       g.add(pinBall);
       this._pin = pin;
       this._pinBall = pinBall;
 
-      var shadow = new THREE.Mesh(
-        new THREE.CircleGeometry(0.5, 20),
-        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.16 })
+      // Pale disc under the feet so the silhouette separates from whatever
+      // colour the ground or a rooftop happens to be. Deliberately opaque:
+      // a transparent one lands in Three's transparent pass, which is drawn
+      // after the opaque body and (with depth testing off) paints over it.
+      var halo = new THREE.Mesh(
+        new THREE.CircleGeometry(1.05, 24),
+        new THREE.MeshBasicMaterial({ color: 0xf7f2e2 })
       );
-      shadow.rotation.x = -Math.PI / 2;
-      shadow.position.y = 0.25;
-      g.add(shadow);
+      halo.rotation.x = -Math.PI / 2;
+      halo.position.y = 0.14;
+      halo.userData.order = 1;   // under the figure, over the world
+      g.add(halo);
+
+      var haloEdge = new THREE.Mesh(
+        new THREE.RingGeometry(1.05, 1.32, 28),
+        new THREE.MeshBasicMaterial({ color: 0x2b2b33 })
+      );
+      haloEdge.rotation.x = -Math.PI / 2;
+      haloEdge.position.y = 0.14;
+      haloEdge.userData.order = 1;
+      g.add(haloEdge);
+
+      // Draw the whole avatar over the buildings. In a top-down map view,
+      // losing track of yourself behind a tower is worse than the slight
+      // unreality of seeing yourself through one.
+      g.traverse(function (o) {
+        if (!o.isMesh) return;
+        o.material.depthTest = false;
+        o.material.depthWrite = false;
+        o.renderOrder = o.userData.order || 3;
+      });
 
       this._scene.add(g);
       this._player = g;
@@ -433,10 +498,13 @@
 
         var pad = new THREE.Mesh(
           new THREE.RingGeometry(5.6, 8, 30),
-          new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.75, side: THREE.DoubleSide })
+          new THREE.MeshBasicMaterial({
+            color: col, transparent: true, opacity: 0.75, side: THREE.DoubleSide,
+            depthWrite: false, polygonOffset: true, polygonOffsetFactor: -8, polygonOffsetUnits: -16
+          })
         );
         pad.rotation.x = -Math.PI / 2;
-        pad.position.set(x, 0.3, z);
+        pad.position.set(x, 0.9, z);
         group.add(pad);
 
         var beacon = new THREE.Mesh(
@@ -447,25 +515,26 @@
         beacon.renderOrder = 4;
         group.add(beacon);
 
-        var sp = labelSprite(THREE, {
+        var label = makeLabel(THREE, {
           letter: cat.letter, color: cat.color,
-          short: cat.short || cat.label || '', name: cat.name || '',
-          minutes: minutes, meters: metres,
-          compass: hasBearing ? compassOf(cat.bearing) : ''
+          short: cat.short || cat.label || '', name: cat.name || ''
         });
-        sp.position.set(x, LABEL_H, z);
-        group.add(sp);
-        this._labels.push(sp);
+        label.draw(metres, minutes, hasBearing ? compassOf(cat.bearing) : '');
+        label.sprite.position.set(x, LABEL_H, z);
+        group.add(label.sprite);
+        this._labels.push(label.sprite);
 
-        var pathMat = new THREE.LineDashedMaterial({ color: col, dashSize: 9, gapSize: 7, transparent: true, opacity: 0.85 });
+        var pathMat = new THREE.LineDashedMaterial({
+          color: col, dashSize: 9, gapSize: 7, transparent: true, opacity: 0.85, depthWrite: false
+        });
         var pathGeo = new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(0, 0.4, 0), new THREE.Vector3(x, 0.4, z)
+          new THREE.Vector3(0, 1.2, 0), new THREE.Vector3(x, 1.2, z)
         ]);
         var line = new THREE.Line(pathGeo, pathMat);
         line.computeLineDistances();
         group.add(line);
 
-        this._markers.push({ id: cat.id, x: x, z: z, beacon: beacon, phase: i });
+        this._markers.push({ id: cat.id, x: x, z: z, beacon: beacon, phase: i, label: label });
       }, this);
 
       // Frame the camera around the furthest facility so all six markers are
@@ -474,23 +543,33 @@
       var furthest = 0;
       this._markers.forEach(function (m) { furthest = Math.max(furthest, Math.hypot(m.x, m.z)); });
       // Markers sit all around the walker, so the camera looks down steeply
-      // enough to cover every direction, not just the way it is facing.
-      this._frame = Math.max(260, Math.min(2000, furthest * 1.45));
-      this._camBack = this._frame * 0.78;
-      this._camUp = this._frame * 1.08;
+      // enough to cover every direction, not just the way it is facing --
+      // close enough that streets and buildings still read at a glance.
+      this._frame = Math.max(220, Math.min(1500, furthest * 1.02));
+      this._camBack = this._frame * 0.62;
+      this._camUp = this._frame * 0.8;
+      // Walking pace scales with how far back the view sits, so crossing the
+      // neighborhood feels the same whether it is 300 m or 1.5 km across.
+      this._speed = Math.max(12, this._frame / 20);
       // Haze has to start beyond the framed area, or pulling the camera back
       // to fit a distant facility fogs the whole neighborhood out.
       if (this._scene && this._scene.fog) {
         this._scene.fog.near = this._frame * 1.7;
         this._scene.fog.far = this._frame * 5.5;
       }
-      if (this._player) this._player.scale.setScalar(1);
-      if (this._pinScaleTargets) this._pinScaleTargets.forEach(function (p) { p.scale.setScalar(1); });
-      var pinScale = Math.max(1, this._frame / 190);
-      if (this._pin) this._pin.scale.setScalar(pinScale);
-      if (this._pinBall) this._pinBall.scale.setScalar(pinScale);
-      this._pinScaleTargets = [this._pin, this._pinBall];
-      this._pinLift = pinScale;
+      // A real 1.8 m person is under a pixel from 400 m up, so the walker is
+      // drawn as a map avatar instead: scaled in step with how far back the
+      // camera sits, which keeps it the same apparent size on screen at any
+      // zoom. The pin rides along as part of the same group.
+      this._avatarScale = Math.max(1, Math.min(20, this._frame / 42));
+      if (this._player) this._player.scale.setScalar(this._avatarScale);
+
+      // Float the signs well above the avatar's head so a marker standing
+      // almost on top of you doesn't hide you behind its label.
+      var labelH = Math.max(38, this._frame * 0.17);
+      this._markers.forEach(function (m) {
+        if (m.label) m.label.sprite.position.y = labelH;
+      });
 
       this._layoutLabels();
     }
@@ -568,7 +647,7 @@
         var moving = (f !== 0 || sdir !== 0);
         if (moving) {
           var len = Math.hypot(f, sdir) || 1;
-          var speed = MOVE_SPEED * dt;
+          var speed = (self._speed || MOVE_SPEED) * dt;
           var fx = -Math.sin(self._yaw) * (f / len) + Math.cos(self._yaw) * (sdir / len);
           var fz = -Math.cos(self._yaw) * (f / len) - Math.sin(self._yaw) * (sdir / len);
           self._pos.x += fx * speed;
@@ -586,10 +665,9 @@
           self._legs[1].rotation.x = -sw;
         }
         if (self._pin) {
-          var lift = self._pinLift || 1;
-          var bob = Math.sin(t * 2.2) * 0.6 * lift;
-          self._pin.position.y = 5.4 * lift + bob;
-          self._pinBall.position.y = 8.1 * lift + bob;
+          var bob = Math.sin(t * 2.2) * 0.12;
+          self._pin.position.y = 2.55 + bob;
+          self._pinBall.position.y = 3.2 + bob;
         }
         if (self._markers) {
           self._markers.forEach(function (m) {
@@ -630,12 +708,21 @@
       if (!this._markers) return;
       var px = this._pos.x, pz = this._pos.z;
       this._markers.forEach(function (m) {
-        var metres = Math.hypot(m.x - px, m.z - pz);
-        var mins = Math.max(1, Math.round(metres * DETOUR / WALK_M_PER_MIN));
+        var dx = m.x - px, dz = m.z - pz;
+        var metres = Math.hypot(dx, dz);
+        var minutes = metres * DETOUR / WALK_M_PER_MIN;
+
         var dEl = document.querySelector('[data-nhs-dist="' + m.id + '"]');
         if (dEl) dEl.textContent = fmtMetres(metres);
         var tEl = document.querySelector('[data-nhs-live="' + m.id + '"]');
-        if (tEl) tEl.textContent = mins + ' min';
+        if (tEl) tEl.textContent = Math.max(1, Math.round(minutes)) + ' min';
+
+        // The sign in the world tracks the walker too, heading included: walk
+        // past a place and it flips from "N" to "S". North is -z.
+        if (m.label) {
+          var bearing = (Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360;
+          m.label.draw(metres, minutes, metres < 8 ? '' : compassOf(bearing));
+        }
       });
     }
 
